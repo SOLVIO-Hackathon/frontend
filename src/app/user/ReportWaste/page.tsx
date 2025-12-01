@@ -1,0 +1,431 @@
+"use client";
+
+import { useState } from "react";
+import { uploadToFirebase } from "@/lib/upload";
+import { API_BASE_URL } from "@/lib/config";
+import { Upload, Trash2, Camera, X, CheckCircle } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+
+export default function ReportWaste() {
+  const { token } = useAuth();
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [uploadedUrl, setUploadedUrl] = useState<string | null>(null);
+  const [analysisData, setAnalysisData] = useState<{
+    confidence_score: number;
+    description: string;
+    severity: string;
+    waste_type: string;
+  } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [title, setTitle] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setUploadedUrl(null);
+      setUploadProgress(0);
+      const reader = new FileReader();
+      reader.onloadend = () => setSelectedImage(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) return;
+    setSubmitting(true);
+    try {
+      // 1) Upload to Firebase
+      const url = await uploadToFirebase(selectedFile, setUploadProgress);
+      setUploadedUrl(url);
+
+      // 2) Call analysis endpoint
+      const res = await fetch(`${API_BASE_URL}/quests/analyze-image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ image_url: url }),
+      });
+      const data = await res.json();
+      setAnalysisData(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUseMyLocation = () => {
+    setMessage(null);
+    if (!navigator.geolocation) {
+      setMessage("Geolocation is not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setLat(pos.coords.latitude);
+        setLng(pos.coords.longitude);
+      },
+      (err) => {
+        setMessage("Couldn't get location. Please allow location access.");
+        console.error(err);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleCreateQuest = async () => {
+    if (!analysisData || !uploadedUrl || !title || lat == null || lng == null) {
+      setMessage("Please complete upload, analysis, title, and location.");
+      return;
+    }
+    setCreating(true);
+    setMessage(null);
+    try {
+      const res = await fetch(`${API_BASE_URL}/quests`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          description: analysisData.description,
+          image_url: uploadedUrl,
+          location: { latitude: lat, longitude: lng },
+          severity: analysisData.severity,
+          title,
+          waste_type: analysisData.waste_type,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `Request failed: ${res.status}`);
+      }
+      setMessage("Quest created successfully.");
+      // Optionally reset title/location
+      // setTitle(""); setLat(null); setLng(null);
+    } catch (e: any) {
+      setMessage(e?.message || "Failed to create quest");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="relative min-h-screen bg-linear-to-br from-green-50 via-emerald-50 to-teal-50">
+        {/* Animated Background Orbs */}
+        <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-green-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
+          <div className="absolute top-40 right-10 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-20 left-1/2 w-72 h-72 bg-teal-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000"></div>
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+          {/* Header */}
+          <div className="mb-12">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-linear-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                <Trash2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Report Waste</h1>
+                <p className="text-slate-600 mt-1">Help keep our environment clean by reporting waste</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Two Column Layout */}
+          <div className="grid lg:grid-cols-2 gap-8">
+            {/* Left Column - Form */}
+            <div className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Image Upload */}
+                <div className="bg-white/40 rounded-lg p-6 border border-slate-200/50">
+                  <label className="block text-sm font-semibold text-slate-800 mb-3">
+                    <Camera className="w-4 h-4 inline mr-2" />
+                    Upload Photo
+                  </label>
+                  {!selectedImage ? (
+                    <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer bg-white/30 hover:bg-emerald-50/30 transition-all duration-300 hover:border-emerald-400">
+                      <Upload className="w-12 h-12 text-emerald-500 mb-3" />
+                      <p className="text-sm text-slate-700">
+                        <span className="font-semibold text-emerald-600">Click to upload</span> or drag and drop
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">PNG, JPG, JPEG up to 10MB</p>
+                      <input
+                        id="image-upload"
+                        type="file"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        required
+                      />
+                    </label>
+                  ) : (
+                    <div className="relative rounded-lg overflow-hidden">
+                      <img src={selectedImage} alt="Waste preview" className="w-full h-64 object-cover" />
+                      {uploadProgress > 0 && uploadProgress < 100 && (
+                        <div className="absolute bottom-3 left-3 right-3 bg-white/90 rounded-lg p-3">
+                          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-2 bg-linear-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                          </div>
+                          <div className="text-xs text-slate-700 mt-2 font-medium">Uploading {uploadProgress}%</div>
+                        </div>
+                      )}
+                      {uploadedUrl && (
+                        <div className="absolute bottom-3 left-3 bg-green-600 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          Uploaded
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setSelectedFile(null);
+                          setUploadedUrl(null);
+                          setUploadProgress(0);
+                        }}
+                        className="absolute top-3 right-3 p-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="submit"
+                    disabled={submitting || !selectedFile}
+                    className="flex-1 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    {submitting ? "Uploading & Analyzing..." : "Upload & Analyze"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedImage(null);
+                      setSelectedFile(null);
+                      setUploadedUrl(null);
+                      setUploadProgress(0);
+                    }}
+                    className="px-6 py-3 border border-slate-300 hover:bg-white/50 text-slate-700 font-semibold rounded-lg transition-all duration-200"
+                  >
+                    Clear
+                  </button>
+                </div>
+              </form>
+
+              {/* Create quest section */}
+              <div className="bg-white/40 rounded-lg p-6 border border-slate-200/50 space-y-4">
+                <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  Create Quest
+                </h3>
+                {message && (
+                  <div className="text-sm text-slate-700 bg-blue-50 border border-blue-200 rounded-lg p-3">{message}</div>
+                )}
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="E.g., Plastic waste pile near Dhanmondi Lake"
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Severity</label>
+                    <input
+                      type="text"
+                      value={analysisData?.severity ?? ""}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-200 bg-slate-100/50 px-4 py-2.5 text-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Waste Type</label>
+                    <input
+                      type="text"
+                      value={analysisData?.waste_type ?? ""}
+                      readOnly
+                      className="w-full rounded-lg border border-slate-200 bg-slate-100/50 px-4 py-2.5 text-slate-600"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                    <textarea
+                      value={analysisData?.description ?? ""}
+                      readOnly
+                      rows={3}
+                      className="w-full rounded-lg border border-slate-200 bg-slate-100/50 px-4 py-2.5 text-slate-600"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Latitude</label>
+                    <input
+                      type="number"
+                      value={lat ?? ""}
+                      onChange={(e) => setLat(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="23.7461"
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Longitude</label>
+                    <input
+                      type="number"
+                      value={lng ?? ""}
+                      onChange={(e) => setLng(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="90.3742"
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={handleUseMyLocation}
+                    className="flex-1 px-4 py-2.5 rounded-lg border border-emerald-300 text-emerald-700 hover:bg-emerald-50/50 transition-all duration-200 font-medium"
+                  >
+                    Take my recent location
+                  </button>
+                  <button
+                    type="button"
+                    disabled={creating}
+                    onClick={handleCreateQuest}
+                    className="flex-1 px-4 py-2.5 rounded-lg bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 disabled:opacity-60 transition-all duration-200 font-semibold disabled:cursor-not-allowed"
+                  >
+                    {creating ? "Creating..." : "Create Quest"}
+                  </button>
+                </div>
+                {uploadedUrl && (
+                  <div className="text-xs text-slate-600 bg-slate-100 rounded-lg p-2 break-all">Image URL: {uploadedUrl}</div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column - Information */}
+            <div className="space-y-6">
+              {/* Info Card 1 */}
+              <div className="bg-white/40 rounded-lg p-6 border border-slate-200/50">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-linear-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center shrink-0">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Why Report Waste?</h3>
+                    <p className="text-slate-600 text-sm leading-relaxed">
+                      Your reports help identify pollution hotspots and enable quick cleanup actions. Together, we can create a cleaner, healthier environment for everyone.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Card 2 */}
+              <div className="bg-white/40 rounded-lg p-6 border border-slate-200/50">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-linear-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center shrink-0">
+                    <Upload className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">How It Works</h3>
+                    <ul className="text-slate-600 text-sm space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Upload a photo of the waste you've spotted</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>AI analyzes the image and identifies waste type</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Add location details and create a cleanup quest</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Community members can accept and complete the quest</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Info Card 3 */}
+              <div className="bg-white/40 rounded-lg p-6 border border-slate-200/50">
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 bg-linear-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center shrink-0">
+                    <CheckCircle className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Best Practices</h3>
+                    <ul className="text-slate-600 text-sm space-y-2">
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Take clear, well-lit photos of the waste</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Include surrounding context for better location</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Provide accurate GPS coordinates if possible</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-green-500 mt-1">•</span>
+                        <span>Add descriptive titles to help others find it</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stats Card */}
+              <div className="bg-linear-to-br from-green-600 to-emerald-600 rounded-lg p-6 text-white">
+                <h3 className="text-lg font-bold mb-4">Community Impact</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white/20 rounded-lg p-4">
+                    <div className="text-2xl font-bold mb-1">1,234</div>
+                    <div className="text-sm text-green-100">Reports Submitted</div>
+                  </div>
+                  <div className="bg-white/20 rounded-lg p-4">
+                    <div className="text-2xl font-bold mb-1">892</div>
+                    <div className="text-sm text-green-100">Quests Completed</div>
+                  </div>
+                  <div className="bg-white/20 rounded-lg p-4">
+                    <div className="text-2xl font-bold mb-1">5.2T</div>
+                    <div className="text-sm text-green-100">Waste Cleaned</div>
+                  </div>
+                  <div className="bg-white/20 rounded-lg p-4">
+                    <div className="text-2xl font-bold mb-1">456</div>
+                    <div className="text-sm text-green-100">Active Users</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

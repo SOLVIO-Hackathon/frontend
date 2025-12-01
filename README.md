@@ -34,3 +34,33 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Using ngrok for Backend API During Hackathon
+
+1. Install ngrok if you don't have it (macOS Homebrew):
+	```bash
+	brew install ngrok
+	```
+2. Start your backend locally (listening on `http://localhost:8000`).
+3. Expose it via ngrok:
+	```bash
+	ngrok http 8000
+	```
+4. Copy the HTTPS forwarding URL (e.g. `https://abc123.ngrok-free.app`).
+5. Create `.env.local` in project root and set:
+	```bash
+	NEXT_PUBLIC_API_BASE_URL=https://abc123.ngrok-free.app
+	```
+6. Restart dev server so env var loads.
+7. All auth requests now target the ngrok URL automatically.
+
+### Switching Back
+Set `NEXT_PUBLIC_API_BASE_URL=http://localhost:8000` or remove it and restart.
+
+### Verify
+Check browser Network tab during login/register; requests should hit the ngrok domain.
+Resolve CORS issues by allowing the ngrok origin in backend.
+
+## Authentication Error Handling
+`apiRequest` surfaces backend `detail`/`message`; `AuthContext` shows them with `react-hot-toast` (e.g. `Incorrect email or password`).
+
