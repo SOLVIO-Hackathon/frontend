@@ -7,7 +7,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { uploadToFirebase } from "@/lib/upload";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Upload, Camera, X, CheckCircle, MapPin } from "lucide-react";
+import { Upload, Camera, X, CheckCircle, MapPin, ChevronDown, ChevronUp, Sparkles } from "lucide-react";
 
 // Dynamically import InteractiveMap to avoid SSR issues with Leaflet
 const InteractiveMap = dynamic(() => import("@/components/InteractiveMap"), {
@@ -44,6 +44,15 @@ export default function ListingsPage() {
 	const [condition, setCondition] = useState<Condition>("working");
 	const [description, setDescription] = useState("");
 
+	// Optional ML model fields for better price prediction
+	const [brand, setBrand] = useState("");
+	const [buildQuality, setBuildQuality] = useState<number>(5);
+	const [originalPrice, setOriginalPrice] = useState<number | null>(null);
+	const [usagePattern, setUsagePattern] = useState<string>("Moderate");
+	const [usedDuration, setUsedDuration] = useState<number | null>(null);
+	const [userLifespan, setUserLifespan] = useState<number | null>(null);
+	const [expiryYears, setExpiryYears] = useState<number | null>(null);
+
 	// Images
 	const [files, setFiles] = useState<File[]>([]);
 	const [previews, setPreviews] = useState<string[]>([]);
@@ -60,6 +69,7 @@ export default function ListingsPage() {
 	const [submitting, setSubmitting] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
 	const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
+	const [showAdvanced, setShowAdvanced] = useState(false);
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const list = Array.from(e.target.files || []);
@@ -227,7 +237,7 @@ export default function ListingsPage() {
 				return;
 			}
 
-			const payload = {
+			const payload: any = {
 				condition,
 				description,
 				device_name: deviceName,
@@ -235,6 +245,15 @@ export default function ListingsPage() {
 				image_urls: urls,
 				location: { latitude: lat, longitude: lng },
 			};
+
+			// Add optional ML fields if provided (for better price prediction)
+			if (brand) payload.brand = brand;
+			if (buildQuality) payload.build_quality = buildQuality;
+			if (originalPrice !== null) payload.original_price = originalPrice;
+			if (usagePattern) payload.usage_pattern = usagePattern;
+			if (usedDuration !== null) payload.used_duration = usedDuration;
+			if (userLifespan !== null) payload.user_lifespan = userLifespan;
+			if (expiryYears !== null) payload.expiry_years = expiryYears;
 
 			console.log("=== LISTING CREATION DEBUG ===");
 			console.log("Submitting listing with payload:", JSON.stringify(payload, null, 2));
@@ -477,6 +496,121 @@ export default function ListingsPage() {
 												required
 											/>
 										</div>
+									</div>
+
+									{/* Advanced Price Prediction Fields */}
+									<div className="border-t border-slate-200 pt-4">
+										<button
+											type="button"
+											onClick={() => setShowAdvanced(!showAdvanced)}
+											className="flex items-center gap-2 text-sm font-semibold text-emerald-700 hover:text-emerald-800 transition-colors"
+										>
+											<Sparkles className="w-4 h-4" />
+											Advanced Price Prediction (Optional)
+											{showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+										</button>
+										<p className="text-xs text-slate-500 mt-1 ml-6">
+											Fill these fields to get a more accurate AI-powered price prediction
+										</p>
+
+										{showAdvanced && (
+											<div className="grid gap-4 md:grid-cols-2 mt-4 p-4 bg-emerald-50/30 rounded-lg border border-emerald-200">
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">Brand</label>
+													<input
+														type="text"
+														value={brand}
+														onChange={(e) => setBrand(e.target.value)}
+														placeholder="e.g., Dell, HP, Apple"
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">
+														Build Quality (1-10)
+													</label>
+													<input
+														type="number"
+														min="1"
+														max="10"
+														value={buildQuality}
+														onChange={(e) => setBuildQuality(Number(e.target.value))}
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">
+														Original Price (Tk)
+													</label>
+													<input
+														type="number"
+														min="0"
+														step="0.01"
+														value={originalPrice ?? ""}
+														onChange={(e) => setOriginalPrice(e.target.value ? Number(e.target.value) : null)}
+														placeholder="e.g., 50000"
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">Usage Pattern</label>
+													<select
+														value={usagePattern}
+														onChange={(e) => setUsagePattern(e.target.value)}
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													>
+														<option value="Light">Light</option>
+														<option value="Moderate">Moderate</option>
+														<option value="Heavy">Heavy</option>
+													</select>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">
+														Used Duration (years)
+													</label>
+													<input
+														type="number"
+														min="0"
+														step="0.1"
+														value={usedDuration ?? ""}
+														onChange={(e) => setUsedDuration(e.target.value ? Number(e.target.value) : null)}
+														placeholder="e.g., 2"
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">
+														Expected Lifespan (years)
+													</label>
+													<input
+														type="number"
+														min="0"
+														step="0.1"
+														value={userLifespan ?? ""}
+														onChange={(e) => setUserLifespan(e.target.value ? Number(e.target.value) : null)}
+														placeholder="e.g., 5"
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+												<div>
+													<label className="block text-sm font-medium text-slate-700 mb-2">
+														Warranty/Expiry (years)
+													</label>
+													<input
+														type="number"
+														min="0"
+														step="0.1"
+														value={expiryYears ?? ""}
+														onChange={(e) => setExpiryYears(e.target.value ? Number(e.target.value) : null)}
+														placeholder="e.g., 3"
+														className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/60"
+													/>
+												</div>
+											</div>
+										)}
+									</div>
+
+									<div className="grid gap-4 md:grid-cols-2">
 										<div>
 											<label className="block text-sm font-medium text-slate-700 mb-2">Latitude</label>
 											<input
