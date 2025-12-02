@@ -77,6 +77,16 @@ export default function ReportWaste() {
   const [reportsTotal, setReportsTotal] = useState<number>(0);
   const [loadingReports, setLoadingReports] = useState<boolean>(false);
   const [reportsError, setReportsError] = useState<string | null>(null);
+  
+  // Fraud detection modal state
+  const [showFraudModal, setShowFraudModal] = useState(false);
+  const [fraudDetails, setFraudDetails] = useState<{
+    fraud_type?: string;
+    message?: string;
+    confidence_score?: number;
+    detailed_reason?: string;
+    web_matches?: any[];
+  } | null>(null);
 
   // Fix for default marker icon in react-leaflet
   useEffect(() => {
@@ -147,6 +157,10 @@ export default function ReportWaste() {
     e.preventDefault();
     if (!selectedFile) return;
     setSubmitting(true);
+    setMessage(null);
+    setFraudDetails(null);
+    setShowFraudModal(false);
+    
     try {
       // 1) Upload to Firebase
       const url = await uploadToFirebase(selectedFile, setUploadProgress);
@@ -162,10 +176,41 @@ export default function ReportWaste() {
         },
         body: JSON.stringify({ image_url: url }),
       });
-      const data = await res.json();
+      
+      // Try to parse JSON response
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        // If not JSON, likely an error page
+        const text = await res.text();
+        console.error("Non-JSON response:", text);
+        throw new Error("Server returned an invalid response. Please check the backend logs.");
+      }
+      
+      // Check if fraud was detected (400 status)
+      if (!res.ok) {
+        if (res.status === 400 && data.detail?.error === "Image fraud detected") {
+          // Show fraud detection modal
+          setFraudDetails(data.detail);
+          setShowFraudModal(true);
+          setMessage(null);
+          // Clear the uploaded image
+          setSelectedImage(null);
+          setSelectedFile(null);
+          setUploadedUrl(null);
+          setUploadProgress(0);
+        } else {
+          setMessage(data.detail?.message || data.detail || JSON.stringify(data) || "Failed to analyze image");
+        }
+        return;
+      }
+      
       setAnalysisData(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setMessage(err?.message || "Failed to analyze image");
     } finally {
       setSubmitting(false);
     }
@@ -230,6 +275,113 @@ export default function ReportWaste() {
 
   return (
     <>
+      {/* Fraud Detection Modal */}
+      {showFraudModal && fraudDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-300">
+            {/* Header */}
+            <div className="bg-red-50 border-b border-red-100 p-6">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <X className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-red-600 flex items-center gap-2">
+                      ⚠️ Fraudulent Image Detected
+                    </h3>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowFraudModal(false);
+                    setFraudDetails(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-slate-700 ml-15">
+                {fraudDetails.message || "This image appears to be downloaded from the internet"}
+              </p>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+              {/* Detection Info Box */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-700 mb-1">Detection Type:</p>
+                    <p className="text-sm font-medium text-slate-700">Confidence:</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="bg-red-600 text-white text-sm font-bold px-3 py-1 rounded mb-2">
+                      Web Image
+                    </div>
+                    <div className="bg-red-600 text-white text-lg font-bold px-3 py-1 rounded">
+                      {fraudDetails.confidence_score ? `${(fraudDetails.confidence_score * 100).toFixed(0)}%` : '100%'}
+                    </div>
+                  </div>
+                </div>
+
+                {fraudDetails.detailed_reason && (
+                  <div className="mt-3 pt-3 border-t border-red-200">
+                    <p className="text-sm text-slate-700">
+                      <strong>Details:</strong> {fraudDetails.detailed_reason}
+                    </p>
+                  </div>
+                )}
+
+                {fraudDetails.web_matches && fraudDetails.web_matches.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-red-200">
+                    <p className="text-sm font-semibold text-slate-700 mb-2">
+                      Found {fraudDetails.web_matches.length} web match(es)
+                    </p>
+                    <div className="space-y-1">
+                      {fraudDetails.web_matches.slice(0, 3).map((match: any, idx: number) => (
+                        <div key={idx} className="text-xs text-blue-600 hover:text-blue-800">
+                          <span className="font-medium">• visual_match:</span>{' '}
+                          <a 
+                            href={match.url || '#'} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="underline break-all"
+                          >
+                            {match.url || match.page_title || 'Web source'}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Why This Matters */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-yellow-900">
+                  <strong className="font-semibold">Why this matters:</strong> We only accept authentic, original photos 
+                  taken at the waste location to prevent fraud and ensure genuine waste reports.
+                </p>
+              </div>
+
+              {/* Action Button */}
+              <button
+                onClick={() => {
+                  setShowFraudModal(false);
+                  setFraudDetails(null);
+                }}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+              >
+                Understood - Upload Real Photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="relative min-h-screen bg-linear-to-br from-green-50 via-emerald-50 to-teal-50">
         {/* Animated Background Orbs */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
@@ -446,7 +598,7 @@ export default function ReportWaste() {
                 </div>
 
                 {/* Map Display */}
-                {isMapReady && lat !== null && lng !== null && (
+                {typeof window !== 'undefined' && isMapReady && lat !== null && lng !== null && (
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Location Preview
@@ -457,6 +609,7 @@ export default function ReportWaste() {
                         zoom={13}
                         style={{ height: "100%", width: "100%" }}
                         key={`${lat}-${lng}`}
+                        scrollWheelZoom={false}
                       >
                         <TileLayer
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

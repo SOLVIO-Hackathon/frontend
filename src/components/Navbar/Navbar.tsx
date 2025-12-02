@@ -123,9 +123,6 @@ export default function Navbar() {
         </a>
         {/* Desktop Menu */}
         <ul className="hidden lg:flex items-center space-x-8 text-sm font-medium text-slate-900">
-<<<<<<< HEAD
-          {renderNavLinks()}
-=======
           {isAdmin ? (
             <>
               <li>
@@ -217,7 +214,6 @@ export default function Navbar() {
               </li>
             </>
           )}
->>>>>>> 9430d5d (Done)
         </ul>
         {/* Actions */}
         <div className="flex items-center space-x-4">
@@ -356,15 +352,6 @@ export default function Navbar() {
         id="mobileMenu"
         className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${isMobileMenuOpen ? "" : "hidden"}`}
       >
-<<<<<<< HEAD
-        {user && user.user_type === "citizen" && (
-          <>
-            <Link href="/user/ReportWaste" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trash2 className="w-4 h-4" />Report Waste</Link>
-            <Link href="/user/listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />Listings</Link>
-            <Link href="/user/my-listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Recycle className="w-4 h-4" />My Listings</Link>
-            <Link href="/user/leaderboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trophy className="w-4 h-4" />Leaderboard</Link>
-            <Link href="/user/complain" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><MessageSquareWarning className="w-4 h-4" />Complain</Link>
-=======
         {isAdmin ? (
           <>
             <Link
@@ -436,7 +423,6 @@ export default function Navbar() {
               <MessageSquareWarning className="w-4 h-4" />
               Complain
             </Link>
->>>>>>> 9430d5d (Done)
           </>
         )}
         {user && user.user_type === "kabadiwala" && (
