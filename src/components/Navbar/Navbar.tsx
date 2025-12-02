@@ -161,11 +161,20 @@ export default function Navbar() {
               </li>
               <li>
                 <Link
-                  href="/admin/flags"
+                  href="/admin/flag"
                   className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
                 >
                   <Flag className="w-4 h-4" />
                   Flags
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/binlevel"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Bin Level
                 </Link>
               </li>
             </>
@@ -446,6 +455,13 @@ export default function Navbar() {
             >
               <Flag className="w-4 h-4" />
               Flags
+            </Link>
+            <Link
+              href="/admin/binlevel"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Trash2 className="w-4 h-4" />
+              Bin Level
             </Link>
           </>
         ) : isCollector ? (

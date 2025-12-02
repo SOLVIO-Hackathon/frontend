@@ -13,6 +13,10 @@ export interface AuthUser {
   total_transactions: number;
   created_at: string;
   updated_at: string;
+  location?: {
+    type: string;
+    coordinates: [number, number];
+  } | null;
 }
 
 export interface AuthResponse {

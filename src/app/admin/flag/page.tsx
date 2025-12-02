@@ -64,15 +64,25 @@ export default function AdminFlagsPage() {
   }, [authLoading, user, router]);
 
   useEffect(() => {
-    if (!token) return;
-    fetchReviews();
-  }, [token]);
+    if (!authLoading && token) {
+      fetchReviews();
+    }
+  }, [token, authLoading]);
 
   const fetchReviews = async () => {
+    if (!token) {
+      console.log("No token available, skipping fetch");
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/reviews?skip=0&limit=50`, {
+      const url = `${API_BASE_URL}/admin/reviews?skip=0&limit=50`;
+      console.log("Fetching reviews from:", url);
+      
+      const res = await fetch(url, {
         headers: {
           Accept: "application/json",
           "ngrok-skip-browser-warning": "true",
@@ -80,20 +90,30 @@ export default function AdminFlagsPage() {
         },
       });
 
+      console.log("Response status:", res.status);
       const ct = res.headers.get("content-type") || "";
       const body = await res.text();
 
-      if (!res.ok) throw new Error(body || `HTTP ${res.status}`);
-      if (!ct.includes("application/json")) throw new Error(body.slice(0, 200));
+      if (!res.ok) {
+        console.error("Response not OK:", body);
+        throw new Error(body || `HTTP ${res.status}`);
+      }
+      
+      if (!ct.includes("application/json")) {
+        console.error("Invalid content type:", ct);
+        throw new Error("Invalid response format");
+      }
 
       const data = JSON.parse(body) as ReviewsResponse;
+      console.log("Fetched reviews:", data);
+      
       setReviews(data.items || []);
       setTotal(data.total || 0);
       setPendingCount(data.pending_count || 0);
     } catch (e: any) {
       console.error("Error fetching reviews:", e);
       setError(e?.message || "Failed to load reviews");
-      toast.error("Failed to load flagged reviews");
+      toast.error("Failed to load flagged reviews: " + (e?.message || "Unknown error"));
     } finally {
       setLoading(false);
     }
@@ -158,6 +178,18 @@ export default function AdminFlagsPage() {
   const filteredReviews = filterStatus === "all" 
     ? reviews 
     : reviews.filter(review => review.status === filterStatus);
+
+  // Show loading while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader className="w-12 h-12 text-green-600 animate-spin" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ProtectedRoute>

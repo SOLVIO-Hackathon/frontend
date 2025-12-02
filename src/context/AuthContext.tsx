@@ -12,7 +12,7 @@ interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (payload: RegisterPayload) => Promise<void>;
+  register: (payload: RegisterPayload) => Promise<{ success: boolean; userType: string }>;
   logout: () => void;
 }
 
@@ -65,6 +65,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await loginUser({ email, password } as LoginPayload);
       handleAuthSuccess(res);
+      
+      // Check if user is a collector without location set
+      if (res.user.user_type === "collector") {
+        // Check if collector has location
+        const collectorHasLocation = res.user.location !== null && res.user.location !== undefined;
+        
+        if (!collectorHasLocation) {
+          // Redirect to confirmation page to set location
+          router.push("/confirmation");
+          return;
+        }
+      }
+      
+      // For other users or collectors with location, go to home
       router.push("/");
     } catch (e: any) {
       const msg = e?.message || "Login failed";
@@ -79,13 +93,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     setError(null);
     try {
-      await registerUser(payload); // Assume backend maybe returns token; we redirect to login regardless
-      // If response contains token and user, we could auto-login. For now, go to login.
+      await registerUser(payload);
+      
+      // All users redirect to login after registration
       router.push("/login");
+      toast.success("Registration successful! Please login.");
+      return { success: true, userType: payload.user_type };
     } catch (e: any) {
       const msg = e?.message || "Registration failed";
       setError(msg);
       toast.error(msg);
+      return { success: false, userType: payload.user_type };
     } finally {
       setLoading(false);
     }
