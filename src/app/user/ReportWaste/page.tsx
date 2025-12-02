@@ -1,10 +1,30 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadToFirebase } from "@/lib/upload";
 import { API_BASE_URL } from "@/lib/config";
 import { Upload, Trash2, Camera, X, CheckCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import dynamic from "next/dynamic";
+
+// Dynamically import the MapContainer to avoid SSR issues
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
+  ssr: false,
+});
+
+import "leaflet/dist/leaflet.css";
 
 export default function ReportWaste() {
   const { token } = useAuth();
@@ -20,10 +40,28 @@ export default function ReportWaste() {
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState("");
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
+  const [lat, setLat] = useState<number | null>(23.8103); // Default to Dhaka, Bangladesh
+  const [lng, setLng] = useState<number | null>(90.4125);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+
+  // Fix for default marker icon in react-leaflet
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const L = require("leaflet");
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+        iconUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      });
+      setIsMapReady(true);
+    }
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,8 +178,12 @@ export default function ReportWaste() {
                 <Trash2 className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Report Waste</h1>
-                <p className="text-slate-600 mt-1">Help keep our environment clean by reporting waste</p>
+                <h1 className="text-4xl font-bold bg-linear-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                  Report Waste
+                </h1>
+                <p className="text-slate-600 mt-1">
+                  Help keep our environment clean by reporting waste
+                </p>
               </div>
             </div>
           </div>
@@ -161,9 +203,14 @@ export default function ReportWaste() {
                     <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-emerald-300 rounded-lg cursor-pointer bg-white/30 hover:bg-emerald-50/30 transition-all duration-300 hover:border-emerald-400">
                       <Upload className="w-12 h-12 text-emerald-500 mb-3" />
                       <p className="text-sm text-slate-700">
-                        <span className="font-semibold text-emerald-600">Click to upload</span> or drag and drop
+                        <span className="font-semibold text-emerald-600">
+                          Click to upload
+                        </span>{" "}
+                        or drag and drop
                       </p>
-                      <p className="text-xs text-slate-500 mt-1">PNG, JPG, JPEG up to 10MB</p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        PNG, JPG, JPEG up to 10MB
+                      </p>
                       <input
                         id="image-upload"
                         type="file"
@@ -175,13 +222,22 @@ export default function ReportWaste() {
                     </label>
                   ) : (
                     <div className="relative rounded-lg overflow-hidden">
-                      <img src={selectedImage} alt="Waste preview" className="w-full h-64 object-cover" />
+                      <img
+                        src={selectedImage}
+                        alt="Waste preview"
+                        className="w-full h-64 object-cover"
+                      />
                       {uploadProgress > 0 && uploadProgress < 100 && (
                         <div className="absolute bottom-3 left-3 right-3 bg-white/90 rounded-lg p-3">
                           <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-                            <div className="h-2 bg-linear-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }} />
+                            <div
+                              className="h-2 bg-linear-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-300"
+                              style={{ width: `${uploadProgress}%` }}
+                            />
                           </div>
-                          <div className="text-xs text-slate-700 mt-2 font-medium">Uploading {uploadProgress}%</div>
+                          <div className="text-xs text-slate-700 mt-2 font-medium">
+                            Uploading {uploadProgress}%
+                          </div>
                         </div>
                       )}
                       {uploadedUrl && (
@@ -214,7 +270,9 @@ export default function ReportWaste() {
                     className="flex-1 bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <CheckCircle className="w-5 h-5" />
-                    {submitting ? "Uploading & Analyzing..." : "Upload & Analyze"}
+                    {submitting
+                      ? "Uploading & Analyzing..."
+                      : "Upload & Analyze"}
                   </button>
                   <button
                     type="button"
@@ -238,11 +296,15 @@ export default function ReportWaste() {
                   Create Quest
                 </h3>
                 {message && (
-                  <div className="text-sm text-slate-700 bg-blue-50 border border-blue-200 rounded-lg p-3">{message}</div>
+                  <div className="text-sm text-slate-700 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    {message}
+                  </div>
                 )}
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Title
+                    </label>
                     <input
                       type="text"
                       value={title}
@@ -253,7 +315,9 @@ export default function ReportWaste() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Severity</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Severity
+                    </label>
                     <input
                       type="text"
                       value={analysisData?.severity ?? ""}
@@ -262,7 +326,9 @@ export default function ReportWaste() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Waste Type</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Waste Type
+                    </label>
                     <input
                       type="text"
                       value={analysisData?.waste_type ?? ""}
@@ -271,7 +337,9 @@ export default function ReportWaste() {
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Description</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Description
+                    </label>
                     <textarea
                       value={analysisData?.description ?? ""}
                       readOnly
@@ -280,26 +348,68 @@ export default function ReportWaste() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Latitude</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Latitude
+                    </label>
                     <input
                       type="number"
                       value={lat ?? ""}
-                      onChange={(e) => setLat(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) =>
+                        setLat(e.target.value ? Number(e.target.value) : null)
+                      }
                       placeholder="23.7461"
                       className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Longitude</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Longitude
+                    </label>
                     <input
                       type="number"
                       value={lng ?? ""}
-                      onChange={(e) => setLng(e.target.value ? Number(e.target.value) : null)}
+                      onChange={(e) =>
+                        setLng(e.target.value ? Number(e.target.value) : null)
+                      }
                       placeholder="90.3742"
                       className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
                     />
                   </div>
                 </div>
+
+                {/* Map Display */}
+                {isMapReady && lat !== null && lng !== null && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Location Preview
+                    </label>
+                    <div className="rounded-lg overflow-hidden border border-slate-300 h-[300px]">
+                      <MapContainer
+                        center={[lat, lng]}
+                        zoom={13}
+                        style={{ height: "100%", width: "100%" }}
+                        key={`${lat}-${lng}`}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker position={[lat, lng]}>
+                          <Popup>
+                            <div className="text-sm">
+                              <strong>Waste Location</strong>
+                              <br />
+                              Lat: {lat.toFixed(6)}
+                              <br />
+                              Lng: {lng.toFixed(6)}
+                            </div>
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button
                     type="button"
@@ -318,7 +428,9 @@ export default function ReportWaste() {
                   </button>
                 </div>
                 {uploadedUrl && (
-                  <div className="text-xs text-slate-600 bg-slate-100 rounded-lg p-2 break-all">Image URL: {uploadedUrl}</div>
+                  <div className="text-xs text-slate-600 bg-slate-100 rounded-lg p-2 break-all">
+                    Image URL: {uploadedUrl}
+                  </div>
                 )}
               </div>
             </div>
@@ -332,9 +444,13 @@ export default function ReportWaste() {
                     <Camera className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">Why Report Waste?</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">
+                      Why Report Waste?
+                    </h3>
                     <p className="text-slate-600 text-sm leading-relaxed">
-                      Your reports help identify pollution hotspots and enable quick cleanup actions. Together, we can create a cleaner, healthier environment for everyone.
+                      Your reports help identify pollution hotspots and enable
+                      quick cleanup actions. Together, we can create a cleaner,
+                      healthier environment for everyone.
                     </p>
                   </div>
                 </div>
@@ -347,7 +463,9 @@ export default function ReportWaste() {
                     <Upload className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">How It Works</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">
+                      How It Works
+                    </h3>
                     <ul className="text-slate-600 text-sm space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
@@ -355,15 +473,21 @@ export default function ReportWaste() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>AI analyzes the image and identifies waste type</span>
+                        <span>
+                          AI analyzes the image and identifies waste type
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>Add location details and create a cleanup quest</span>
+                        <span>
+                          Add location details and create a cleanup quest
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>Community members can accept and complete the quest</span>
+                        <span>
+                          Community members can accept and complete the quest
+                        </span>
                       </li>
                     </ul>
                   </div>
@@ -377,7 +501,9 @@ export default function ReportWaste() {
                     <CheckCircle className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800 mb-2">Best Practices</h3>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">
+                      Best Practices
+                    </h3>
                     <ul className="text-slate-600 text-sm space-y-2">
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
@@ -385,15 +511,21 @@ export default function ReportWaste() {
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>Include surrounding context for better location</span>
+                        <span>
+                          Include surrounding context for better location
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>Provide accurate GPS coordinates if possible</span>
+                        <span>
+                          Provide accurate GPS coordinates if possible
+                        </span>
                       </li>
                       <li className="flex items-start gap-2">
                         <span className="text-green-500 mt-1">•</span>
-                        <span>Add descriptive titles to help others find it</span>
+                        <span>
+                          Add descriptive titles to help others find it
+                        </span>
                       </li>
                     </ul>
                   </div>
@@ -406,11 +538,15 @@ export default function ReportWaste() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-white/20 rounded-lg p-4">
                     <div className="text-2xl font-bold mb-1">1,234</div>
-                    <div className="text-sm text-green-100">Reports Submitted</div>
+                    <div className="text-sm text-green-100">
+                      Reports Submitted
+                    </div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-4">
                     <div className="text-2xl font-bold mb-1">892</div>
-                    <div className="text-sm text-green-100">Quests Completed</div>
+                    <div className="text-sm text-green-100">
+                      Quests Completed
+                    </div>
                   </div>
                   <div className="bg-white/20 rounded-lg p-4">
                     <div className="text-2xl font-bold mb-1">5.2T</div>
