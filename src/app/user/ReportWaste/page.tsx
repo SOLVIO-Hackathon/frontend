@@ -5,6 +5,8 @@ import { uploadToFirebase } from "@/lib/upload";
 import { API_BASE_URL } from "@/lib/config";
 import { Upload, Trash2, Camera, X, CheckCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import dynamic from "next/dynamic";
 
 // Dynamically import the MapContainer to avoid SSR issues
@@ -28,6 +30,7 @@ import "leaflet/dist/leaflet.css";
 
 export default function ReportWaste() {
   const { token } = useAuth();
+  const router = useRouter();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -237,7 +240,7 @@ export default function ReportWaste() {
 
   const handleCreateQuest = async () => {
     if (!analysisData || !uploadedUrl || !title || lat == null || lng == null) {
-      setMessage("Please complete upload, analysis, title, and location.");
+      toast.error("Please complete upload, analysis, title, and location.");
       return;
     }
     setCreating(true);
@@ -263,11 +266,22 @@ export default function ReportWaste() {
         const text = await res.text();
         throw new Error(text || `Request failed: ${res.status}`);
       }
-      setMessage("Quest created successfully.");
-      // Optionally reset title/location
-      // setTitle(""); setLat(null); setLng(null);
+      toast.success("Quest created successfully! 🎉");
+      
+      // Reset form
+      setSelectedImage(null);
+      setSelectedFile(null);
+      setUploadedUrl(null);
+      setUploadProgress(0);
+      setAnalysisData(null);
+      setTitle("");
+      
+      // Navigate to show reports page after a short delay
+      setTimeout(() => {
+        router.push("/user/showreports");
+      }, 1500);
     } catch (e: any) {
-      setMessage(e?.message || "Failed to create quest");
+      toast.error(e?.message || "Failed to create quest");
     } finally {
       setCreating(false);
     }

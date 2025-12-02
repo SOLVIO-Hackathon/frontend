@@ -1,351 +1,296 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
   Trophy,
   Medal,
   TrendingUp,
   Award,
   Crown,
-  Star,
-  Zap,
+  Loader2,
+  AlertCircle,
+  CheckCircle,
+  DollarSign,
 } from "lucide-react";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import { useAuth } from "@/context/AuthContext";
+import { API_BASE_URL } from "@/lib/config";
+
+type LeaderboardEntry = {
+  rank: number;
+  user: {
+    id: string;
+    full_name: string;
+    user_type: string;
+    reputation_score: number;
+    is_sponsor: boolean;
+  };
+  quests_completed: number;
+  total_bounty_earned: number;
+  badges_count: number;
+};
 
 export default function Leaderboard() {
-  // Mock leaderboard data
-  const topUsers = [
-    {
-      rank: 1,
-      name: "Sarah Johnson",
-      points: 12450,
-      reports: 156,
-      avatar: "SJ",
-      color: "from-yellow-400 to-amber-500",
-      badge: "🏆",
-      streak: 45,
-    },
-    {
-      rank: 2,
-      name: "Michael Chen",
-      points: 11280,
-      reports: 142,
-      avatar: "MC",
-      color: "from-slate-300 to-slate-400",
-      badge: "🥈",
-      streak: 38,
-    },
-    {
-      rank: 3,
-      name: "Emma Williams",
-      points: 10950,
-      reports: 138,
-      avatar: "EW",
-      color: "from-orange-400 to-amber-600",
-      badge: "🥉",
-      streak: 42,
-    },
-  ];
+  const { token } = useAuth();
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const otherUsers = [
-    {
-      rank: 4,
-      name: "James Anderson",
-      points: 9840,
-      reports: 124,
-      avatar: "JA",
-      streak: 28,
-    },
-    {
-      rank: 5,
-      name: "Olivia Martinez",
-      points: 9320,
-      reports: 118,
-      avatar: "OM",
-      streak: 31,
-    },
-    {
-      rank: 6,
-      name: "William Brown",
-      points: 8750,
-      reports: 110,
-      avatar: "WB",
-      streak: 25,
-    },
-    {
-      rank: 7,
-      name: "Sophia Davis",
-      points: 8420,
-      reports: 106,
-      avatar: "SD",
-      streak: 22,
-    },
-    {
-      rank: 8,
-      name: "Benjamin Wilson",
-      points: 7980,
-      reports: 101,
-      avatar: "BW",
-      streak: 19,
-    },
-    {
-      rank: 9,
-      name: "Isabella Garcia",
-      points: 7650,
-      reports: 96,
-      avatar: "IG",
-      streak: 17,
-    },
-    {
-      rank: 10,
-      name: "Lucas Rodriguez",
-      points: 7320,
-      reports: 92,
-      avatar: "LR",
-      streak: 15,
-    },
-  ];
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+
+    const fetchLeaderboard = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`${API_BASE_URL}/dashboard/leaderboard?limit=10`, {
+          headers: {
+            Accept: "application/json",
+            "ngrok-skip-browser-warning": "true",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const ct = res.headers.get("content-type") || "";
+        const body = await res.text();
+
+        if (!res.ok) throw new Error(body || `HTTP ${res.status}`);
+        if (!ct.includes("application/json")) throw new Error(body.slice(0, 200));
+
+        const data = JSON.parse(body) as LeaderboardEntry[];
+        if (!cancelled) setLeaderboard(data);
+      } catch (e: any) {
+        if (!cancelled) {
+          setError(e?.message || "Failed to load leaderboard");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchLeaderboard();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const topUsers = leaderboard.slice(0, 3);
+  const otherUsers = leaderboard.slice(3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Header */}
-        <div className="mb-12">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-white" />
+    <ProtectedRoute>
+      <div className="min-h-screen py-8 sm:py-12 bg-linear-to-br from-green-50 via-blue-50 to-purple-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Trophy className="w-12 h-12 text-yellow-500" />
+              <h1 className="text-4xl sm:text-5xl font-bold bg-linear-to-r from-yellow-500 via-orange-500 to-red-500 bg-clip-text text-transparent">
+                Leaderboard
+              </h1>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900">Leaderboard</h1>
-              <p className="text-slate-600">
-                Top eco-warriors making a difference
-              </p>
-            </div>
+            <p className="text-lg text-slate-600">
+              Top contributors making a difference
+            </p>
           </div>
-        </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* Main Leaderboard - Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Top 3 Podium */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              {/* 2nd Place */}
-              <div className="order-1">
-                <div className="bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg p-6 text-center border-2 border-slate-300">
-                  <div className="text-4xl mb-2">🥈</div>
-                  <div className="w-16 h-16 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-3">
-                    {topUsers[1].avatar}
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-1">
-                    {topUsers[1].name}
-                  </h3>
-                  <p className="text-2xl font-bold text-slate-700 mb-1">
-                    {topUsers[1].points.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    {topUsers[1].reports} reports
-                  </p>
-                </div>
-              </div>
+          {/* Loading State */}
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Loader2 className="w-12 h-12 text-green-600 animate-spin mb-4" />
+              <p className="text-slate-600">Loading leaderboard...</p>
+            </div>
+          )}
 
-              {/* 1st Place */}
-              <div className="order-2">
-                <div className="bg-gradient-to-br from-yellow-100 to-amber-200 rounded-lg p-6 text-center border-2 border-yellow-400 relative -mt-4">
-                  <Crown className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                  <div className="w-20 h-20 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center text-white font-bold text-2xl mx-auto mb-3 ring-4 ring-yellow-300">
-                    {topUsers[0].avatar}
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-1">
-                    {topUsers[0].name}
-                  </h3>
-                  <p className="text-3xl font-bold text-yellow-700 mb-1">
-                    {topUsers[0].points.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    {topUsers[0].reports} reports
-                  </p>
-                  <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
-                    #{topUsers[0].rank}
-                  </div>
-                </div>
-              </div>
-
-              {/* 3rd Place */}
-              <div className="order-3">
-                <div className="bg-gradient-to-br from-orange-100 to-amber-200 rounded-lg p-6 text-center border-2 border-orange-300">
-                  <div className="text-4xl mb-2">🥉</div>
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-amber-600 rounded-full flex items-center justify-center text-white font-bold text-xl mx-auto mb-3">
-                    {topUsers[2].avatar}
-                  </div>
-                  <h3 className="font-bold text-slate-900 mb-1">
-                    {topUsers[2].name}
-                  </h3>
-                  <p className="text-2xl font-bold text-orange-700 mb-1">
-                    {topUsers[2].points.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-slate-600">
-                    {topUsers[2].reports} reports
-                  </p>
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-semibold text-red-800 mb-1">Error Loading Leaderboard</h3>
+                  <p className="text-red-600 text-sm">{error}</p>
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Rest of Leaderboard */}
-            <div className="space-y-3">
-              {otherUsers.map((user) => (
-                <div
-                  key={user.rank}
-                  className="bg-white border border-slate-200 rounded-lg p-4 hover:border-green-300 transition-colors"
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Rank */}
-                    <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center">
-                      <span className="text-xl font-bold text-slate-700">
-                        #{user.rank}
-                      </span>
-                    </div>
+          {/* Empty State */}
+          {!loading && !error && leaderboard.length === 0 && (
+            <div className="text-center py-20">
+              <Trophy className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-slate-600 mb-2">No Rankings Yet</h3>
+              <p className="text-slate-500">Be the first to make a difference!</p>
+            </div>
+          )}
 
-                    {/* Avatar */}
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-semibold">
-                      {user.avatar}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-slate-900">
-                        {user.name}
-                      </h3>
-                      <div className="flex items-center gap-4 text-sm text-slate-600">
-                        <span>{user.reports} reports</span>
-                        <span className="flex items-center gap-1">
-                          <Zap className="w-3 h-3 text-orange-500" />
-                          {user.streak} day streak
+          {/* Leaderboard Content */}
+          {!loading && !error && leaderboard.length > 0 && (
+            <>
+              {/* Top 3 Podium */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                {/* 2nd Place */}
+                {topUsers[1] && (
+                  <div className="md:order-1 transform md:translate-y-8">
+                    <div className="bg-linear-to-br from-slate-100 to-slate-200 rounded-2xl p-6 border-2 border-slate-300 shadow-xl hover:shadow-2xl transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <Medal className="w-8 h-8 text-slate-400" />
+                        <span className="text-3xl font-bold text-slate-400">
+                          #2
                         </span>
                       </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-linear-to-br from-slate-300 to-slate-400 rounded-full flex items-center justify-center text-3xl font-bold text-white mb-3">
+                          {getInitials(topUsers[1].user.full_name)}
+                        </div>
+                        <h3 className="text-xl font-bold mb-1">
+                          {topUsers[1].user.full_name}
+                        </h3>
+                        <p className="text-3xl font-bold text-slate-400 mb-2">
+                          ${topUsers[1].total_bounty_earned.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-slate-600">
+                          {topUsers[1].quests_completed} quests
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Award className="w-4 h-4 text-slate-500" />
+                          <span className="text-xs text-slate-500">{topUsers[1].badges_count} badges</span>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                )}
 
-                    {/* Points */}
-                    <div className="text-right">
-                      <p className="text-xl font-bold text-green-600">
-                        {user.points.toLocaleString()}
-                      </p>
-                      <p className="text-xs text-slate-500">points</p>
+                {/* 1st Place */}
+                {topUsers[0] && (
+                  <div className="md:order-2">
+                    <div className="bg-linear-to-br from-yellow-100 via-yellow-200 to-amber-200 rounded-2xl p-6 border-2 border-yellow-400 shadow-2xl hover:shadow-3xl transition-all transform hover:scale-105">
+                      <div className="flex justify-between items-start mb-4">
+                        <Crown className="w-10 h-10 text-yellow-600" />
+                        <span className="text-4xl font-bold text-yellow-600">
+                          #1
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 bg-linear-to-br from-yellow-400 to-amber-500 rounded-full flex items-center justify-center text-4xl font-bold text-white mb-3">
+                          {getInitials(topUsers[0].user.full_name)}
+                        </div>
+                        <h3 className="text-2xl font-bold mb-1">
+                          {topUsers[0].user.full_name}
+                        </h3>
+                        <p className="text-4xl font-bold text-yellow-600 mb-2">
+                          ${topUsers[0].total_bounty_earned.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-yellow-700">
+                          {topUsers[0].quests_completed} quests
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Award className="w-5 h-5 text-yellow-600" />
+                          <span className="text-sm text-yellow-700">{topUsers[0].badges_count} badges</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          </div>
+                )}
 
-          {/* Right Sidebar - Stats */}
-          <div className="space-y-6">
-            {/* Your Rank Card */}
-            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg p-6 text-white">
-              <div className="flex items-center gap-2 mb-3">
-                <Star className="w-5 h-5" />
-                <h3 className="font-semibold">Your Rank</h3>
+                {/* 3rd Place */}
+                {topUsers[2] && (
+                  <div className="md:order-3 transform md:translate-y-12">
+                    <div className="bg-linear-to-br from-amber-100 to-orange-200 rounded-2xl p-6 border-2 border-amber-400 shadow-xl hover:shadow-2xl transition-all">
+                      <div className="flex justify-between items-start mb-4">
+                        <Award className="w-8 h-8 text-amber-600" />
+                        <span className="text-3xl font-bold text-amber-600">
+                          #3
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-center">
+                        <div className="w-20 h-20 bg-linear-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center text-3xl font-bold text-white mb-3">
+                          {getInitials(topUsers[2].user.full_name)}
+                        </div>
+                        <h3 className="text-xl font-bold mb-1">
+                          {topUsers[2].user.full_name}
+                        </h3>
+                        <p className="text-3xl font-bold text-amber-600 mb-2">
+                          ${topUsers[2].total_bounty_earned.toLocaleString()}
+                        </p>
+                        <p className="text-sm text-amber-700">
+                          {topUsers[2].quests_completed} quests
+                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <Award className="w-4 h-4 text-amber-600" />
+                          <span className="text-xs text-amber-700">{topUsers[2].badges_count} badges</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-              <div className="text-4xl font-bold mb-2">#24</div>
-              <p className="text-green-100 text-sm mb-4">
-                Keep going! You are in top 5%
-              </p>
-              <div className="bg-white/20 rounded-lg p-3">
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Progress to #23</span>
-                  <span>75%</span>
-                </div>
-                <div className="w-full bg-white/30 rounded-full h-2">
-                  <div
-                    className="bg-white rounded-full h-2"
-                    style={{ width: "75%" }}
-                  ></div>
-                </div>
-              </div>
-            </div>
 
-            {/* Achievements */}
-            <div className="bg-white border border-slate-200 rounded-lg p-6">
-              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <Award className="w-5 h-5 text-green-600" />
-                Recent Achievements
-              </h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl">🎯</div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      First Report
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      Submitted your first waste report
-                    </p>
+              {/* Rest of Leaderboard */}
+              {otherUsers.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-xl p-6">
+                  <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-green-600" />
+                    Rankings
+                  </h2>
+                  <div className="space-y-3">
+                    {otherUsers.map((user) => (
+                      <div
+                        key={user.user.id}
+                        className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors border border-slate-200"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-linear-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center text-sm font-bold text-slate-600">
+                            {getInitials(user.user.full_name)}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xl font-bold text-slate-400">
+                                #{user.rank}
+                              </span>
+                              <h3 className="font-semibold text-lg">
+                                {user.user.full_name}
+                              </h3>
+                            </div>
+                            <div className="flex items-center gap-3 text-sm text-slate-600">
+                              <span className="flex items-center gap-1">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                {user.quests_completed} quests
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Award className="w-4 h-4 text-blue-500" />
+                                {user.badges_count} badges
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1 text-2xl font-bold text-slate-700">
+                            <DollarSign className="w-5 h-5 text-green-600" />
+                            {user.total_bounty_earned.toLocaleString()}
+                          </div>
+                          <p className="text-sm text-slate-500">bounty earned</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl">🔥</div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      7 Day Streak
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      Reported waste for 7 days straight
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                  <div className="text-2xl">⭐</div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      Community Hero
-                    </p>
-                    <p className="text-xs text-slate-600">
-                      Reached 50 reports milestone
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Stats Summary */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-6">
-              <h3 className="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                This Month
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">
-                    Reports Submitted
-                  </span>
-                  <span className="text-lg font-bold text-slate-900">23</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Points Earned</span>
-                  <span className="text-lg font-bold text-green-600">
-                    1,840
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-slate-600">Current Streak</span>
-                  <span className="text-lg font-bold text-orange-600">
-                    12 days
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Rewards Info */}
-            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg p-6 text-white">
-              <Medal className="w-8 h-8 mb-3" />
-              <h3 className="font-semibold mb-2">Unlock Rewards</h3>
-              <p className="text-sm text-purple-100 mb-3">
-                Reach top 10 to unlock exclusive eco-friendly rewards!
-              </p>
-              <button className="w-full bg-white text-purple-600 font-semibold py-2 px-4 rounded-lg hover:bg-purple-50 transition-colors text-sm">
-                View Rewards
-              </button>
-            </div>
-          </div>
+              )}
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

@@ -16,7 +16,13 @@ import {
   Trophy,
   MessageSquareWarning,
   Zap,
-  Bell
+  Bell,
+  Package,
+  ShoppingBag,
+  BarChart3,
+  Award,
+  FileText,
+  Flag
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -28,6 +34,7 @@ export default function Navbar() {
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const isCollector = user?.user_type === "collector";
   const isAdmin = user?.user_type === "admin";
+  const isKabadiwala = user?.user_type === "kabadiwala";
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "bn" : "en");
@@ -134,6 +141,33 @@ export default function Navbar() {
                   Dashboard
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/admin/informatics"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  Informatics
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/reports"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Reports
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/admin/flags"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Flag className="w-4 h-4" />
+                  Flags
+                </Link>
+              </li>
             </>
           ) : isCollector ? (
             <>
@@ -165,6 +199,27 @@ export default function Navbar() {
                 </Link>
               </li>
             </>
+          ) : isKabadiwala ? (
+            <>
+              <li>
+                <Link
+                  href="/kabadiwala/listings"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Available Listings
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/kabadiwala/my-bids"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  My Bids
+                </Link>
+              </li>
+            </>
           ) : (
             <>
               <li>
@@ -178,6 +233,15 @@ export default function Navbar() {
               </li>
               <li>
                 <Link
+                  href="/user/showreports"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  All Reports
+                </Link>
+              </li>
+              <li>
+                <Link
                   href="/user/listings"
                   className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
                 >
@@ -186,32 +250,33 @@ export default function Navbar() {
                 </Link>
               </li>
               <li>
-                <a
-                  href="#"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-                >
-                  <Gift className="w-4 h-4" />
-                  Rewards
-                </a>
-              </li>
-              <li>
                 <Link
-                  href="/user/leaderboard"
+                  href="/user/my-listings"
                   className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
                 >
-                  <Trophy className="w-4 h-4" />
-                  Leaderboard
+                  <Package className="w-4 h-4" />
+                  My Listings
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/user/complain"
+                  href="/user/pickup"
                   className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
                 >
-                  <MessageSquareWarning className="w-4 h-4" />
-                  Complain
+                  <ShoppingBag className="w-4 h-4" />
+                  View Bids
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/user/badges/my-badges"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Award className="w-4 h-4" />
+                  Badges
+                </Link>
+              </li>
+              
             </>
           )}
         </ul>
@@ -361,6 +426,27 @@ export default function Navbar() {
               <Zap className="w-4 h-4" />
               Dashboard
             </Link>
+            <Link
+              href="/admin/informatics"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Informatics
+            </Link>
+            <Link
+              href="/admin/reports"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <FileText className="w-4 h-4" />
+              Reports
+            </Link>
+            <Link
+              href="/admin/flags"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Flag className="w-4 h-4" />
+              Flags
+            </Link>
           </>
         ) : isCollector ? (
           <>
@@ -386,6 +472,23 @@ export default function Navbar() {
               Reports
             </Link>
           </>
+        ) : isKabadiwala ? (
+          <>
+            <Link
+              href="/kabadiwala/listings"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Package className="w-4 h-4" />
+              Available Listings
+            </Link>
+            <Link
+              href="/kabadiwala/my-bids"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              My Bids
+            </Link>
+          </>
         ) : (
           <>
             <Link
@@ -402,19 +505,40 @@ export default function Navbar() {
               <Eye className="w-4 h-4" />
               Listings
             </Link>
-            <a
-              href="#"
+            <Link
+              href="/user/my-listings"
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
             >
-              <Gift className="w-4 h-4" />
-              Rewards
-            </a>
+              <Package className="w-4 h-4" />
+              My Listings
+            </Link>
+            <Link
+              href="/user/pickup"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              View Bids
+            </Link>
+            <Link
+              href="/user/showreports"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <FileText className="w-4 h-4" />
+              All Reports
+            </Link>
             <Link
               href="/user/leaderboard"
               className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
             >
               <Trophy className="w-4 h-4" />
               Leaderboard
+            </Link>
+            <Link
+              href="/user/badges/my-badges"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Award className="w-4 h-4" />
+              Badges
             </Link>
             <Link
               href="/user/complain"
@@ -445,25 +569,5 @@ export default function Navbar() {
         )}
       </div>
     </header>
-  );
-}
-
-function MobileNavLink({
-  href,
-  onClick,
-  children,
-}: {
-  href: string;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="block px-3 py-2 text-sm font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-all"
-    >
-      {children}
-    </Link>
   );
 }

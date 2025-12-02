@@ -72,6 +72,13 @@ export default function CollectorDashboardPage() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [completingQuest, setCompletingQuest] = useState(false);
   const [completeError, setCompleteError] = useState<string | null>(null);
+  const [questLatitude, setQuestLatitude] = useState<string>("");
+  const [questLongitude, setQuestLongitude] = useState<string>("");
+  
+  // Result Modal state
+  const [resultModalOpen, setResultModalOpen] = useState(false);
+  const [resultType, setResultType] = useState<"success" | "error">("success");
+  const [resultMessage, setResultMessage] = useState<string>("");
 
   // Role-based protection: only allow collectors
   useEffect(() => {
@@ -216,14 +223,42 @@ export default function CollectorDashboardPage() {
   };
 
   const openCompleteModal = (quest: AssignedQuest) => {
+    // Check if quest is already completed
+    if (quest.status === "completed" || quest.status === "verified") {
+      toast.success("✅ This quest is already completed!");
+      return;
+    }
+    
     setSelectedQuest(quest);
     setBeforePhoto(null);
     setAfterPhoto(null);
-    setBeforePhotoUrl("");
+    // Use existing quest image as before photo
+    setBeforePhotoUrl(quest.image_url || "");
     setAfterPhotoUrl("");
     setVerificationNotes("");
     setCompleteError(null);
+    setQuestLatitude("");
+    setQuestLongitude("");
     setCompleteModalOpen(true);
+  };
+
+  const useQuestLocation = () => {
+    setCompleteError(null);
+    if (!navigator.geolocation) {
+      setCompleteError("Geolocation not supported by your browser.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setQuestLatitude(String(pos.coords.latitude));
+        setQuestLongitude(String(pos.coords.longitude));
+      },
+      (err) => {
+        setCompleteError("Couldn't get location. Please allow location access.");
+        console.error(err);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
   };
 
   const handleCompleteQuest = async () => {
@@ -231,12 +266,13 @@ export default function CollectorDashboardPage() {
     setCompleteError(null);
 
     // Validate photos
-    if (!beforePhoto && !beforePhotoUrl) {
-      setCompleteError("Please upload a before photo.");
+    // Before photo should already be set from quest image
+    if (!beforePhotoUrl) {
+      setCompleteError("Before photo is missing from the quest.");
       return;
     }
-    if (!afterPhoto && !afterPhotoUrl) {
-      setCompleteError("Please upload an after photo.");
+    if (!afterPhoto) {
+      setCompleteError("Please upload an after photo showing the cleaned area.");
       return;
     }
 
@@ -244,25 +280,20 @@ export default function CollectorDashboardPage() {
     setUploadingPhotos(true);
 
     try {
-      // Upload photos if files are selected
-      let finalBeforeUrl = beforePhotoUrl;
-      let finalAfterUrl = afterPhotoUrl;
-
-      if (beforePhoto) {
-        finalBeforeUrl = await uploadToFirebase(beforePhoto);
-      }
-      if (afterPhoto) {
-        finalAfterUrl = await uploadToFirebase(afterPhoto);
-      }
-
+      // Upload after photo to Firebase
+      const uploadToastId = toast.loading("Uploading after photo to Firebase...");
+      const finalAfterUrl = await uploadToFirebase(afterPhoto);
+      toast.dismiss(uploadToastId);
+      toast.success("Photo uploaded successfully!");
+      
       setUploadingPhotos(false);
 
-      // Prepare payload
+      // Prepare payload - before_photo_url is from the original quest image
       const payload = {
         collector_id: user.id,
         status: "completed",
-        before_photo_url: finalBeforeUrl,
-        after_photo_url: finalAfterUrl,
+        before_photo_url: beforePhotoUrl, // Original quest image
+        after_photo_url: finalAfterUrl, // Newly uploaded after photo
         before_photo_metadata: {},
         after_photo_metadata: {},
         ai_verification_score: 0,
@@ -291,7 +322,8 @@ export default function CollectorDashboardPage() {
         throw new Error(body.slice(0, 200));
       }
 
-      toast.success("Quest completed successfully!");
+      // Dismiss any remaining toasts
+      toast.dismiss();
       setCompleteModalOpen(false);
       
       // Refresh assigned quests
@@ -307,32 +339,31 @@ export default function CollectorDashboardPage() {
       setAssigned(Array.isArray(refreshData.items) ? refreshData.items : []);
       setAssignedTotal(typeof refreshData.total === "number" ? refreshData.total : refreshData.items.length);
       setLoadingAssigned(false);
+      
+      // Show success modal
+      setResultType("success");
+      setResultMessage("Quest completed successfully! Your bounty points have been added.");
+      setResultModalOpen(true);
+      setCompleteModalOpen(false);
+      
+      // Auto close after 3 seconds
+      setTimeout(() => {
+        setResultModalOpen(false);
+      }, 3000);
     } catch (e: any) {
-      // Fallback: Use dummy data and show success (graceful degradation)
-      const dummyPayload = {
-        collector_id: user.id || "dummy-collector-id",
-        status: "completed",
-        before_photo_url: beforePhotoUrl || "https://via.placeholder.com/400x300?text=Before+Photo",
-        after_photo_url: afterPhotoUrl || "https://via.placeholder.com/400x300?text=After+Photo",
-        before_photo_metadata: {},
-        after_photo_metadata: {},
-        ai_verification_score: 0,
-        verification_notes: verificationNotes || "Completed (offline mode)",
-      };
+      // Dismiss any remaining toasts
+      toast.dismiss();
       
-      setCompleteError(`API Error: ${e?.message || "Unknown error"}. Using fallback data.`);
-      toast.error("Failed to complete quest via API, but data saved locally (dummy mode).");
+      // Show error modal
+      setResultType("error");
+      setResultMessage(e?.message || "Failed to complete quest. Please try again.");
+      setResultModalOpen(true);
+      setCompleteModalOpen(false);
       
-      // Update local state optimistically
-      setAssigned((prev) =>
-        prev.map((q) =>
-          q.id === selectedQuest.id
-            ? { ...q, status: "completed", before_photo_url: dummyPayload.before_photo_url, after_photo_url: dummyPayload.after_photo_url }
-            : q
-        )
-      );
-      
-      setTimeout(() => setCompleteModalOpen(false), 2000);
+      // Auto close after 4 seconds
+      setTimeout(() => {
+        setResultModalOpen(false);
+      }, 4000);
     } finally {
       setCompletingQuest(false);
       setUploadingPhotos(false);
@@ -715,9 +746,9 @@ export default function CollectorDashboardPage() {
               className="absolute inset-0 bg-slate-900/70 backdrop-blur-md"
               onClick={() => !completingQuest && setCompleteModalOpen(false)}
             />
-            <div className="relative z-10 w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border-2 border-slate-200 max-h-[90vh] overflow-y-auto">
+            <div className="relative z-10 w-full max-w-2xl bg-white rounded-3xl shadow-2xl border-2 border-slate-200 max-h-[90vh] flex flex-col overflow-hidden">
               {/* Modal Header */}
-              <div className="sticky top-0 z-20 px-8 py-6 bg-linear-to-br from-emerald-50 to-green-50 border-b-2 border-emerald-200">
+              <div className="px-8 py-6 bg-linear-to-br from-emerald-50 to-green-50 border-b-2 border-emerald-200 shrink-0">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-500 to-green-600 flex items-center justify-center text-white shadow-lg">
                     <CheckCircle2 className="w-6 h-6" />
@@ -739,7 +770,7 @@ export default function CollectorDashboardPage() {
               </div>
 
               {/* Modal Body */}
-              <div className="px-8 py-6 space-y-6">
+              <div className="px-8 py-6 space-y-6 overflow-y-auto flex-1">
                 {completeError && (
                   <div className="flex items-center gap-3 text-sm text-red-700 bg-red-50 border-2 border-red-200 rounded-xl p-4">
                     <AlertCircle className="w-5 h-5 shrink-0" />
@@ -773,51 +804,35 @@ export default function CollectorDashboardPage() {
                   </div>
                 </div>
 
-                {/* Before Photo Upload */}
+                {/* Before Photo - From Quest */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
                     <Camera className="w-4 h-4" />
-                    Before Photo <span className="text-red-500">*</span>
+                    Before Photo (Original Quest Image)
                   </label>
                   <div className="relative">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setBeforePhoto(file);
-                          setBeforePhotoUrl(URL.createObjectURL(file));
-                        }
-                      }}
-                      className="hidden"
-                      id="before-photo"
-                      disabled={completingQuest}
-                    />
-                    <label
-                      htmlFor="before-photo"
-                      className="flex items-center justify-center gap-3 w-full px-4 py-8 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-all"
-                    >
-                      {beforePhotoUrl ? (
-                        <div className="text-center">
-                          <img src={beforePhotoUrl} alt="Before" className="max-h-40 mx-auto rounded-lg mb-2" />
-                          <span className="text-sm text-slate-600">Click to change</span>
+                    {beforePhotoUrl ? (
+                      <div className="relative rounded-xl overflow-hidden border-2 border-emerald-200 bg-slate-50">
+                        <img src={beforePhotoUrl} alt="Before - Original Quest" className="w-full h-64 object-cover" />
+                        <div className="absolute top-3 right-3 bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1 shadow-lg">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Original Quest Image
                         </div>
-                      ) : (
-                        <>
-                          <Upload className="w-6 h-6 text-slate-400" />
-                          <span className="text-slate-600 font-medium">Upload Before Photo</span>
-                        </>
-                      )}
-                    </label>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-3 w-full px-4 py-8 rounded-xl border-2 border-slate-300 bg-slate-50">
+                        <AlertCircle className="w-6 h-6 text-slate-400" />
+                        <span className="text-slate-600">No before photo available</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 {/* After Photo Upload */}
                 <div>
                   <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-3">
-                    <Camera className="w-4 h-4" />
-                    After Photo <span className="text-red-500">*</span>
+                    <Upload className="w-4 h-4" />
+                    After Photo (Cleaned Area) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <input
@@ -836,21 +851,83 @@ export default function CollectorDashboardPage() {
                     />
                     <label
                       htmlFor="after-photo"
-                      className="flex items-center justify-center gap-3 w-full px-4 py-8 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer transition-all"
+                      className={`flex items-center justify-center gap-3 w-full px-4 py-8 rounded-xl border-2 border-dashed transition-all ${
+                        afterPhotoUrl 
+                          ? "border-emerald-300 bg-emerald-50 hover:bg-emerald-100" 
+                          : "border-blue-300 bg-blue-50 hover:bg-blue-100"
+                      } cursor-pointer`}
                     >
                       {afterPhotoUrl ? (
-                        <div className="text-center">
-                          <img src={afterPhotoUrl} alt="After" className="max-h-40 mx-auto rounded-lg mb-2" />
-                          <span className="text-sm text-slate-600">Click to change</span>
+                        <div className="text-center w-full">
+                          <img src={afterPhotoUrl} alt="After - Cleaned" className="max-h-48 mx-auto rounded-lg mb-3 border-2 border-emerald-300" />
+                          <div className="flex items-center justify-center gap-2 text-sm text-emerald-700 font-medium">
+                            <CheckCircle2 className="w-4 h-4" />
+                            Photo selected - Click to change
+                          </div>
                         </div>
                       ) : (
-                        <>
-                          <Upload className="w-6 h-6 text-slate-400" />
-                          <span className="text-slate-600 font-medium">Upload After Photo</span>
-                        </>
+                        <div className="text-center">
+                          <Upload className="w-8 h-8 text-blue-500 mx-auto mb-3" />
+                          <span className="text-blue-700 font-semibold text-base block mb-1">
+                            Upload After Cleanup Photo
+                          </span>
+                          <span className="text-blue-600 text-sm">
+                            Show the cleaned area after collection
+                          </span>
+                        </div>
                       )}
                     </label>
                   </div>
+                </div>
+
+                {/* Location Inputs */}
+                <div className="bg-blue-50 rounded-xl p-5 border-2 border-blue-200">
+                  <div className="flex items-center gap-3 mb-4">
+                    <MapPin className="w-5 h-5 text-blue-600" />
+                    <h4 className="font-semibold text-slate-800">Collection Location</h4>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 mb-2 block">
+                        Latitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={questLatitude}
+                        onChange={(e) => setQuestLatitude(e.target.value)}
+                        placeholder="e.g., 23.8103"
+                        className="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                        disabled={completingQuest}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs font-semibold text-slate-700 mb-2 block">
+                        Longitude
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        value={questLongitude}
+                        onChange={(e) => setQuestLongitude(e.target.value)}
+                        placeholder="e.g., 90.4125"
+                        className="w-full rounded-lg border-2 border-slate-300 px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-all"
+                        disabled={completingQuest}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={useQuestLocation}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border-2 border-blue-300 bg-white text-blue-700 hover:bg-blue-50 font-medium transition-all disabled:opacity-60"
+                    disabled={completingQuest}
+                  >
+                    <MapPin className="w-4 h-4" />
+                    Use My Current Location
+                  </button>
                 </div>
 
                 {/* Verification Notes */}
@@ -878,7 +955,7 @@ export default function CollectorDashboardPage() {
               </div>
 
               {/* Modal Footer */}
-              <div className="sticky bottom-0 px-8 py-5 border-t-2 border-slate-200 flex items-center justify-end gap-3 bg-slate-50">
+              <div className="px-8 py-5 border-t-2 border-slate-200 flex items-center justify-end gap-3 bg-slate-50 shrink-0">
                 <button
                   type="button"
                   onClick={() => !completingQuest && setCompleteModalOpen(false)}
@@ -1010,7 +1087,103 @@ export default function CollectorDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Result Modal (Success/Error) */}
+        {resultModalOpen && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"
+              onClick={() => setResultModalOpen(false)}
+            />
+            <div className={`relative z-10 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border-4 ${
+              resultType === "success" 
+                ? "bg-linear-to-br from-green-50 to-emerald-100 border-green-400" 
+                : "bg-linear-to-br from-red-50 to-rose-100 border-red-400"
+            } animate-[scaleIn_0.3s_ease-out]`}>
+              {/* Modal Content */}
+              <div className="p-8 text-center">
+                {/* Icon */}
+                <div className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${
+                  resultType === "success"
+                    ? "bg-linear-to-br from-green-500 to-emerald-600"
+                    : "bg-linear-to-br from-red-500 to-rose-600"
+                } shadow-2xl`}>
+                  {resultType === "success" ? (
+                    <CheckCircle2 className="w-11 h-11 text-white" />
+                  ) : (
+                    <AlertCircle className="w-11 h-11 text-white" />
+                  )}
+                </div>
+
+                {/* Title */}
+                <h3 className={`text-2xl font-bold mb-3 ${
+                  resultType === "success" ? "text-green-800" : "text-red-800"
+                }`}>
+                  {resultType === "success" ? "Success! 🎉" : "Oops! ⚠️"}
+                </h3>
+
+                {/* Message */}
+                <p className={`text-base leading-relaxed mb-6 ${
+                  resultType === "success" ? "text-green-700" : "text-red-700"
+                }`}>
+                  {resultMessage}
+                </p>
+
+                {/* Close Button */}
+                <button
+                  onClick={() => setResultModalOpen(false)}
+                  className={`px-8 py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all ${
+                    resultType === "success"
+                      ? "bg-linear-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700"
+                      : "bg-linear-to-r from-red-600 to-rose-600 text-white hover:from-red-700 hover:to-rose-700"
+                  }`}
+                >
+                  Got it!
+                </button>
+
+                {/* Auto-close indicator */}
+                <p className="text-xs text-slate-500 mt-4">
+                  Auto-closing in {resultType === "success" ? "3" : "4"} seconds...
+                </p>
+              </div>
+
+              {/* Progress bar animation */}
+              <div className="h-1.5 bg-slate-200 overflow-hidden">
+                <div 
+                  className={`h-full ${
+                    resultType === "success" ? "bg-green-500" : "bg-red-500"
+                  } animate-[progressBar_${resultType === "success" ? "3" : "4"}s_linear]`}
+                  style={{
+                    animation: `progressBar ${resultType === "success" ? "3" : "4"}s linear`
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
+      <style jsx>{`
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+        
+        @keyframes progressBar {
+          from {
+            width: 100%;
+          }
+          to {
+            width: 0%;
+          }
+        }
+      `}</style>
     </ProtectedRoute>
   );
 }
