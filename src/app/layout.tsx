@@ -32,16 +32,14 @@ export default function RootLayout({
 }>) {
   const pathname = usePathname();
 
-  // Hide navbar and chatbot on login, register, and admin pages
+  // Hide navbar and chatbot on login and register pages only
   const hideNavbar =
     pathname === "/login" ||
-    pathname === "/register" ||
-    pathname?.startsWith("/admin");
+    pathname === "/register";
 
   const hideChatbot =
     pathname === "/login" ||
-    pathname === "/register" ||
-    pathname?.startsWith("/admin");
+    pathname === "/register";
 
   return (
     <html lang="en">

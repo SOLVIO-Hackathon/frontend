@@ -16,6 +16,7 @@ import {
   Trophy,
   MessageSquareWarning,
   Zap,
+  Bell
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -26,6 +27,7 @@ export default function Navbar() {
   const { user, logout } = useAuth();
   const [openUserMenu, setOpenUserMenu] = useState(false);
   const isCollector = user?.user_type === "collector";
+  const isAdmin = user?.user_type === "admin";
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "bn" : "en");
@@ -109,7 +111,101 @@ export default function Navbar() {
         </a>
         {/* Desktop Menu */}
         <ul className="hidden lg:flex items-center space-x-8 text-sm font-medium text-slate-900">
+<<<<<<< HEAD
           {renderNavLinks()}
+=======
+          {isAdmin ? (
+            <>
+              <li>
+                <Link
+                  href="/admin"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  Dashboard
+                </Link>
+              </li>
+            </>
+          ) : isCollector ? (
+            <>
+              <li>
+                <Link
+                  href="/collector/dashboard"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  Dashboard
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/collector/notifications"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Bell className="w-4 h-4" />
+                  Notifications
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/collector/reports"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Reports
+                </Link>
+              </li>
+            </>
+          ) : (
+            <>
+              <li>
+                <Link
+                  href="/user/ReportWaste"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Report Waste
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/user/listings"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  Listings
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Gift className="w-4 h-4" />
+                  Rewards
+                </a>
+              </li>
+              <li>
+                <Link
+                  href="/user/leaderboard"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <Trophy className="w-4 h-4" />
+                  Leaderboard
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/user/complain"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <MessageSquareWarning className="w-4 h-4" />
+                  Complain
+                </Link>
+              </li>
+            </>
+          )}
+>>>>>>> 9430d5d (Done)
         </ul>
         {/* Actions */}
         <div className="flex items-center space-x-4">
@@ -248,6 +344,7 @@ export default function Navbar() {
         id="mobileMenu"
         className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${isMobileMenuOpen ? "" : "hidden"}`}
       >
+<<<<<<< HEAD
         {user && user.user_type === "citizen" && (
           <>
             <Link href="/user/ReportWaste" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trash2 className="w-4 h-4" />Report Waste</Link>
@@ -255,6 +352,79 @@ export default function Navbar() {
             <Link href="/user/my-listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Recycle className="w-4 h-4" />My Listings</Link>
             <Link href="/user/leaderboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trophy className="w-4 h-4" />Leaderboard</Link>
             <Link href="/user/complain" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><MessageSquareWarning className="w-4 h-4" />Complain</Link>
+=======
+        {isAdmin ? (
+          <>
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Zap className="w-4 h-4" />
+              Dashboard
+            </Link>
+          </>
+        ) : isCollector ? (
+          <>
+            <Link
+              href="/collector/dashboard"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Eye className="w-4 h-4" />
+              Dashboard
+            </Link>
+            <Link
+              href="/collector/notifications"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Bell className="w-4 h-4" />
+              Notifications
+            </Link>
+            <Link
+              href="/collector/reports"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Trash2 className="w-4 h-4" />
+              Reports
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/user/ReportWaste"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Trash2 className="w-4 h-4" />
+              Report Waste
+            </Link>
+            <Link
+              href="/user/listings"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Eye className="w-4 h-4" />
+              Listings
+            </Link>
+            <a
+              href="#"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Gift className="w-4 h-4" />
+              Rewards
+            </a>
+            <Link
+              href="/user/leaderboard"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <Trophy className="w-4 h-4" />
+              Leaderboard
+            </Link>
+            <Link
+              href="/user/complain"
+              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+            >
+              <MessageSquareWarning className="w-4 h-4" />
+              Complain
+            </Link>
+>>>>>>> 9430d5d (Done)
           </>
         )}
         {user && user.user_type === "kabadiwala" && (
