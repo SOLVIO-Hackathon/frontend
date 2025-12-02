@@ -1,10 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { uploadToFirebase } from "@/lib/upload";
 import { API_BASE_URL } from "@/lib/config";
 import { Upload, Trash2, Camera, X, CheckCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import dynamic from "next/dynamic";
+
+// Dynamically import the MapContainer to avoid SSR issues
+const MapContainer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.MapContainer),
+  { ssr: false }
+);
+const TileLayer = dynamic(
+  () => import("react-leaflet").then((mod) => mod.TileLayer),
+  { ssr: false }
+);
+const Marker = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Marker),
+  { ssr: false }
+);
+const Popup = dynamic(
+  () => import("react-leaflet").then((mod) => mod.Popup),
+  { ssr: false }
+);
+
+import "leaflet/dist/leaflet.css";
 
 export default function ReportWaste() {
   const { token } = useAuth();
@@ -20,10 +41,25 @@ export default function ReportWaste() {
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [title, setTitle] = useState("");
-  const [lat, setLat] = useState<number | null>(null);
-  const [lng, setLng] = useState<number | null>(null);
+  const [lat, setLat] = useState<number | null>(23.8103); // Default to Dhaka, Bangladesh
+  const [lng, setLng] = useState<number | null>(90.4125);
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [isMapReady, setIsMapReady] = useState(false);
+
+  // Fix for default marker icon in react-leaflet
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const L = require("leaflet");
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
+        iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
+        shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+      });
+      setIsMapReady(true);
+    }
+  }, []);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -300,6 +336,36 @@ export default function ReportWaste() {
                     />
                   </div>
                 </div>
+
+                {/* Map Display */}
+                {isMapReady && lat !== null && lng !== null && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Location Preview</label>
+                    <div className="rounded-lg overflow-hidden border border-slate-300 h-[300px]">
+                      <MapContainer
+                        center={[lat, lng]}
+                        zoom={13}
+                        style={{ height: "100%", width: "100%" }}
+                        key={`${lat}-${lng}`}
+                      >
+                        <TileLayer
+                          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <Marker position={[lat, lng]}>
+                          <Popup>
+                            <div className="text-sm">
+                              <strong>Waste Location</strong><br />
+                              Lat: {lat.toFixed(6)}<br />
+                              Lng: {lng.toFixed(6)}
+                            </div>
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex gap-3">
                   <button
                     type="button"
