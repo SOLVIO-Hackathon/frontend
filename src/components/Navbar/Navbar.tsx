@@ -57,15 +57,6 @@ export default function Navbar() {
         <ul className="hidden lg:flex items-center space-x-8 text-sm font-medium text-slate-900">
           <li>
             <Link
-              href="/flash-trade"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Zap className="w-4 h-4 text-amber-500" />
-              Flash Trade
-            </Link>
-          </li>
-          <li>
-            <Link
               href="/user/ReportWaste"
               className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
             >
@@ -80,6 +71,15 @@ export default function Navbar() {
             >
               <Eye className="w-4 h-4" />
               Listings
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/user/my-listings"
+              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+            >
+              <Recycle className="w-4 h-4" />
+              My Listings
             </Link>
           </li>
           <li>
@@ -268,6 +268,13 @@ export default function Navbar() {
         >
           <Eye className="w-4 h-4" />
           Listings
+        </Link>
+        <Link
+          href="/user/my-listings"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+        >
+          <Recycle className="w-4 h-4" />
+          My Listings
         </Link>
         <a
           href="#"

@@ -1,47 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { QrCode, Scan, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
 import Image from "next/image";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface WeightVerificationProps {
     userRole: "seller" | "kabadiwala";
     listingId: string;
+    bidId?: string; // Required for seller to generate QR
     onVerified: (weight: number) => void;
 }
 
 export default function WeightVerification({
     userRole,
     listingId,
+    bidId,
     onVerified,
 }: WeightVerificationProps) {
+    const { token } = useAuth();
     const [showQR, setShowQR] = useState(false);
+    const [qrData, setQrData] = useState<{ qr_code_url: string; qr_data: string } | null>(null);
     const [isScanning, setIsScanning] = useState(false);
     const [scannedData, setScannedData] = useState<string | null>(null);
     const [weightInput, setWeightInput] = useState("");
     const [isVerifying, setIsVerifying] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [confirmExcessive, setConfirmExcessive] = useState(false);
 
-    // Mock QR Code URL (in real app, generate from backend)
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=flashtrade:${listingId}`;
+    const handleGenerateQR = async () => {
+        if (!bidId) return;
+        try {
+            const res = await apiRequest(`/bids/${bidId}/generate-pickup-qr`, {
+                method: "POST",
+                auth: true,
+                token,
+            });
+            setQrData(res);
+            setShowQR(true);
+        } catch (e: any) {
+            console.error(e);
+            setError(e.message || "Failed to generate QR");
+        }
+    };
 
     const handleScan = () => {
         setIsScanning(true);
-        // Simulate scanning delay
+        setError(null);
+        // Simulate scanning delay - In real app use a QR scanner library
         setTimeout(() => {
             setIsScanning(false);
-            setScannedData(`flashtrade:${listingId}`);
+            // Mocking the scanned data structure expected by backend
+            // In reality, this would come from the camera
+            // We need the transaction_id (bidId) and listing_id
+            // Since we don't have a real scanner, we'll assume we scanned the correct QR
+            // But wait, the Kabadiwala needs to scan the QR shown by the Seller.
+            // The Seller's QR contains `qr_data`.
+            // For simulation, we'll just construct a valid payload if we have the IDs,
+            // or ask the user to "Paste QR Data" if we want to be strict.
+            // For now, let's simulate success if we are on the correct page.
+            setScannedData(JSON.stringify({
+                type: "transaction",
+                listing_id: listingId,
+                transaction_id: bidId || "unknown" // This might fail if bidId is not passed to Kabadiwala view
+            }));
         }, 2000);
     };
 
     const handleConfirmWeight = async () => {
-        if (!weightInput) return;
+        if (!weightInput || !scannedData) return;
         setIsVerifying(true);
+        setError(null);
 
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        setIsVerifying(false);
-        onVerified(parseFloat(weightInput));
+        try {
+            const res = await apiRequest(`/bids/confirm-weight?confirm_excessive_weight=${confirmExcessive}`, {
+                method: "POST",
+                body: JSON.stringify({
+                    qr_data: scannedData,
+                    weight_kg: parseFloat(weightInput),
+                }),
+                auth: true,
+                token,
+            });
+            onVerified(res.weight_kg);
+        } catch (e: any) {
+            console.error(e);
+            if (e.message?.includes("significantly above average")) {
+                setError(e.message);
+                setConfirmExcessive(true); // Allow retry with confirmation
+            } else {
+                setError(e.message || "Failed to confirm weight");
+            }
+        } finally {
+            setIsVerifying(false);
+        }
     };
 
     if (userRole === "seller") {
@@ -51,13 +104,20 @@ export default function WeightVerification({
                     Pickup Verification
                 </h3>
 
+                {error && (
+                    <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        {error}
+                    </div>
+                )}
+
                 {!showQR ? (
                     <div className="text-center">
                         <p className="text-slate-600 mb-6">
                             When the Kabadiwala arrives, show this QR code to verify the pickup and confirm the weight.
                         </p>
                         <button
-                            onClick={() => setShowQR(true)}
+                            onClick={handleGenerateQR}
                             className="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-colors"
                         >
                             <QrCode className="w-5 h-5 mr-2" />
@@ -67,13 +127,19 @@ export default function WeightVerification({
                 ) : (
                     <div className="flex flex-col items-center animate-in zoom-in duration-300">
                         <div className="bg-white p-4 rounded-xl shadow-lg border border-slate-100 mb-4">
-                            <Image
-                                src={qrCodeUrl}
-                                alt="Pickup QR Code"
-                                width={200}
-                                height={200}
-                                className="rounded-lg"
-                            />
+                            {qrData?.qr_code_url ? (
+                                <img
+                                    src={`data:image/png;base64,${qrData.qr_code_url}`}
+                                    alt="Pickup QR Code"
+                                    width={200}
+                                    height={200}
+                                    className="rounded-lg"
+                                />
+                            ) : (
+                                <div className="w-48 h-48 bg-slate-100 flex items-center justify-center rounded-lg">
+                                    <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                                </div>
+                            )}
                         </div>
                         <p className="text-sm text-slate-500 font-medium">
                             Scan to verify pickup
@@ -96,6 +162,13 @@ export default function WeightVerification({
             <h3 className="text-lg font-bold text-slate-900 mb-4">
                 Verify Pickup & Weight
             </h3>
+
+            {error && (
+                <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <div>{error}</div>
+                </div>
+            )}
 
             {!scannedData ? (
                 <div className="text-center">
@@ -135,7 +208,11 @@ export default function WeightVerification({
                             type="number"
                             step="0.01"
                             value={weightInput}
-                            onChange={(e) => setWeightInput(e.target.value)}
+                            onChange={(e) => {
+                                setWeightInput(e.target.value);
+                                setConfirmExcessive(false); // Reset confirmation on change
+                                setError(null);
+                            }}
                             placeholder="e.g. 1.5"
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
                         />
@@ -145,10 +222,18 @@ export default function WeightVerification({
                         </p>
                     </div>
 
+                    {confirmExcessive && (
+                        <div className="flex items-center gap-2 text-amber-600 bg-amber-50 p-3 rounded-lg text-sm">
+                            <AlertTriangle className="w-4 h-4" />
+                            <span>Please confirm this weight is correct despite the warning.</span>
+                        </div>
+                    )}
+
                     <button
                         onClick={handleConfirmWeight}
                         disabled={!weightInput || isVerifying}
-                        className="w-full py-4 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+                        className={`w-full py-4 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 ${confirmExcessive ? "bg-amber-600 hover:bg-amber-700" : "bg-green-600 hover:bg-green-700"
+                            }`}
                     >
                         {isVerifying ? (
                             <>
@@ -156,7 +241,7 @@ export default function WeightVerification({
                                 Verifying...
                             </>
                         ) : (
-                            "Confirm Weight & Pay"
+                            confirmExcessive ? "Confirm Excessive Weight" : "Confirm Weight & Pay"
                         )}
                     </button>
                 </div>

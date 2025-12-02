@@ -1,17 +1,42 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { uploadToFirebase } from "@/lib/upload";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 import { Upload, Camera, X, CheckCircle, MapPin } from "lucide-react";
 
-type DeviceType = "laptop" | "phone" | "tablet" | "desktop" | "accessory";
-type Condition = "working" | "needs_repair" | "broken";
+// Dynamically import InteractiveMap to avoid SSR issues with Leaflet
+const InteractiveMap = dynamic(() => import("@/components/InteractiveMap"), {
+	ssr: false,
+	loading: () => (
+		<div className="w-full h-[320px] rounded-lg border border-slate-200 bg-slate-100 flex items-center justify-center">
+			<div className="text-slate-500">Loading map...</div>
+		</div>
+	),
+});
+
+type DeviceType = "laptop" | "mobile" | "tablet" | "desktop" | "monitor" | "other";
+type Condition = "working" | "partially_working" | "not_working";
+
+interface AIAnalysisResponse {
+	device_name?: string;
+	device_type?: string;
+	condition?: string;
+	ai_description?: string;
+	condition_notes?: string;
+	estimated_value_min?: number;
+	estimated_value_max?: number;
+	confidence_score?: number;
+	recycling_value_notes?: string;
+}
 
 export default function ListingsPage() {
 	const { token } = useAuth();
+	const router = useRouter();
 
 	// Form state
 	const [deviceName, setDeviceName] = useState("");
@@ -31,8 +56,10 @@ export default function ListingsPage() {
 
 	// UI state
 	const [uploading, setUploading] = useState(false);
+	const [analyzing, setAnalyzing] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 	const [message, setMessage] = useState<string | null>(null);
+	const [aiAnalysis, setAiAnalysis] = useState<AIAnalysisResponse | null>(null);
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const list = Array.from(e.target.files || []);
@@ -81,12 +108,64 @@ export default function ListingsPage() {
 			}
 			setImageUrls(urls);
 			setMessage("Images uploaded successfully.");
+
+			// Auto-analyze after upload if not already analyzed
+			if (urls.length > 0 && !aiAnalysis) {
+				analyzeImage(urls[0]);
+			}
+
 			return urls;
 		} catch (e: any) {
 			setMessage(e?.message || "Failed to upload images");
 			throw e;
 		} finally {
 			setUploading(false);
+		}
+	};
+
+	const analyzeImage = async (url: string) => {
+		setAnalyzing(true);
+		try {
+			const res = await apiRequest("/listings/analyze", {
+				method: "POST",
+				body: JSON.stringify({ image_url: url, description: description || "" }),
+				auth: true,
+				token,
+			}) as AIAnalysisResponse;
+			console.log("AI Analysis response:", res);
+			setAiAnalysis(res);
+
+			// Auto-fill fields if empty
+			if (!deviceName && res.device_name) {
+				console.log("Setting device name:", res.device_name);
+				setDeviceName(res.device_name);
+			}
+			if (res.device_type) {
+				const backendType = res.device_type.toLowerCase() as DeviceType;
+				console.log("Setting device type:", backendType);
+				// Validate it's a valid DeviceType
+				if (["laptop", "mobile", "tablet", "desktop", "monitor", "other"].includes(backendType)) {
+					setDeviceType(backendType);
+				}
+			}
+			if (res.condition) {
+				const backendCondition = res.condition.toLowerCase() as Condition;
+				console.log("Setting condition:", backendCondition);
+				// Validate it's a valid Condition
+				if (["working", "partially_working", "not_working"].includes(backendCondition)) {
+					setCondition(backendCondition);
+				}
+			}
+			if (!description && res.condition_notes) {
+				console.log("Setting description from condition_notes:", res.condition_notes);
+				setDescription(res.condition_notes);
+			}
+
+		} catch (e) {
+			console.error("AI Analysis failed", e);
+			setMessage("AI analysis failed. Please fill in the details manually.");
+		} finally {
+			setAnalyzing(false);
 		}
 	};
 
@@ -100,6 +179,7 @@ export default function ListingsPage() {
 			(pos) => {
 				setLat(pos.coords.latitude);
 				setLng(pos.coords.longitude);
+				setMessage("Location set successfully!");
 			},
 			(err) => {
 				console.error(err);
@@ -107,6 +187,12 @@ export default function ListingsPage() {
 			},
 			{ enableHighAccuracy: true, timeout: 10000 }
 		);
+	};
+
+	const handleMapClick = (latitude: number, longitude: number) => {
+		setLat(latitude);
+		setLng(longitude);
+		setMessage(`Location set: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
 	};
 
 	const ensureUploaded = async () => {
@@ -128,6 +214,10 @@ export default function ListingsPage() {
 			setMessage("Please provide location (use the button to take your location).");
 			return;
 		}
+		if (!token) {
+			setMessage("You must be logged in to create a listing. Please login first.");
+			return;
+		}
 		try {
 			setSubmitting(true);
 			const urls = await ensureUploaded();
@@ -146,6 +236,8 @@ export default function ListingsPage() {
 				location: { latitude: lat, longitude: lng },
 			};
 
+			console.log("Submitting listing with payload:", payload);
+
 			await apiRequest("/listings", {
 				method: "POST",
 				body: JSON.stringify(payload),
@@ -153,27 +245,19 @@ export default function ListingsPage() {
 				token,
 			});
 
-			setMessage("Listing created successfully.");
-			// Optionally reset form
-			// setDeviceName(""); setDescription(""); setFiles([]); setPreviews([]); setProgress([]); setImageUrls([]);
+			setMessage("Listing created successfully. Redirecting...");
+			// Navigate to my-listings page
+			setTimeout(() => {
+				router.push("/user/my-listings");
+			}, 1000);
 		} catch (e: any) {
-			setMessage(e?.message || "Failed to create listing");
+			console.error("Failed to create listing:", e);
+			const errorMsg = e?.message || e?.details?.detail || "Failed to create listing";
+			setMessage(`Error: ${errorMsg}`);
 		} finally {
 			setSubmitting(false);
 		}
 	};
-
-	const mapSrc = (() => {
-		const d = 0.02;
-		const cLat = lat ?? 23.7808;
-		const cLng = lng ?? 90.4219;
-		const left = cLng - d;
-		const right = cLng + d;
-		const top = cLat + d;
-		const bottom = cLat - d;
-		const marker = `&marker=${encodeURIComponent(`${cLat},${cLng}`)}`;
-		return `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(`${left},${bottom},${right},${top}`)}&layer=mapnik${marker}`;
-	})();
 
 	return (
 		<ProtectedRoute>
@@ -279,6 +363,42 @@ export default function ListingsPage() {
 									)}
 								</div>
 
+								{/* AI Analysis Result */}
+								{analyzing && (
+									<div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center gap-3 animate-pulse">
+										<div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+										<span className="text-blue-700 font-medium">AI is analyzing your device...</span>
+									</div>
+								)}
+
+								{aiAnalysis && (
+									<div className="bg-linear-to-br from-emerald-50 to-teal-50 border border-emerald-200 rounded-lg p-4 space-y-3">
+										<div className="flex items-center gap-2 text-emerald-800 font-semibold">
+											<CheckCircle className="w-5 h-5" />
+											AI Analysis Complete
+										</div>
+										<div className="grid grid-cols-2 gap-4 text-sm">
+											<div>
+												<span className="text-slate-500 block">Estimated Value</span>
+												<span className="font-bold text-lg text-emerald-700">
+													Tk {aiAnalysis.estimated_value_min ?? 0} - {aiAnalysis.estimated_value_max ?? 0}
+												</span>
+											</div>
+											<div>
+												<span className="text-slate-500 block">Confidence</span>
+												<span className="font-medium text-slate-700">
+													{((aiAnalysis.confidence_score ?? 0) * 100).toFixed(0)}%
+												</span>
+											</div>
+										</div>
+										{aiAnalysis.recycling_value_notes && (
+											<p className="text-xs text-slate-600 bg-white/50 p-2 rounded">
+												{aiAnalysis.recycling_value_notes}
+											</p>
+										)}
+									</div>
+								)}
+
 								{/* Details */}
 								<div className="bg-white/40 rounded-lg p-6 border border-slate-200/50 space-y-4">
 									{message && (
@@ -305,10 +425,11 @@ export default function ListingsPage() {
 												className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
 											>
 												<option value="laptop">Laptop</option>
-												<option value="phone">Phone</option>
+												<option value="mobile">Mobile Phone</option>
 												<option value="tablet">Tablet</option>
 												<option value="desktop">Desktop</option>
-												<option value="accessory">Accessory</option>
+												<option value="monitor">Monitor</option>
+												<option value="other">Other</option>
 											</select>
 										</div>
 										<div>
@@ -319,8 +440,8 @@ export default function ListingsPage() {
 												className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/40"
 											>
 												<option value="working">Working</option>
-												<option value="needs_repair">Needs Repair</option>
-												<option value="broken">Broken</option>
+												<option value="partially_working">Partially Working</option>
+												<option value="not_working">Not Working</option>
 											</select>
 										</div>
 										<div className="md:col-span-2">
@@ -382,21 +503,17 @@ export default function ListingsPage() {
 						<div className="space-y-6">
 							<div className="bg-white/40 rounded-lg p-6 border border-slate-200/50">
 								<h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
-									<MapPin className="w-5 h-5 text-emerald-600" /> Location Preview (OpenStreetMap)
+									<MapPin className="w-5 h-5 text-emerald-600" /> Location Preview (Interactive)
 								</h3>
-								<div className="rounded-lg overflow-hidden border border-slate-200">
-									<iframe
-										title="OpenStreetMap"
-										width="100%"
-										height="320"
-										frameBorder="0"
-										scrolling="no"
-										src={mapSrc}
-									/>
-								</div>
+								<InteractiveMap lat={lat} lng={lng} onLocationSelect={handleMapClick} />
 								<p className="text-xs text-slate-600 mt-2">
-									Map centers on your chosen coordinates. Click "Take my location" to auto-fill latitude and longitude.
+									💡 <strong>Click anywhere on the map</strong> to set your location, or use "Take my location" button for automatic GPS location.
 								</p>
+								{lat !== null && lng !== null && (
+									<div className="mt-2 text-xs text-emerald-700 font-medium">
+										📍 Selected: {lat.toFixed(6)}, {lng.toFixed(6)}
+									</div>
+								)}
 							</div>
 
 							<div className="bg-linear-to-br from-green-600 to-emerald-600 rounded-lg p-6 text-white">

@@ -13,6 +13,11 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     ...(options.headers as Record<string, string> || {}),
   };
 
+  // Add ngrok-skip-browser-warning header to bypass ngrok interstitial page
+  if (API_BASE_URL.includes("ngrok")) {
+    headers["ngrok-skip-browser-warning"] = "true";
+  }
+
   if (options.auth && options.token) {
     headers.Authorization = `Bearer ${options.token}`;
   }

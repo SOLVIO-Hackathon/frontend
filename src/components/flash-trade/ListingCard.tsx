@@ -43,8 +43,8 @@ export default function ListingCard({ listing }: { listing: ListingProps }) {
                                 {listing.device_name}
                             </h3>
                             <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${listing.condition === 'Working' ? 'bg-emerald-100 text-emerald-700' :
-                                    listing.condition === 'Damaged' ? 'bg-amber-100 text-amber-700' :
-                                        'bg-slate-100 text-slate-700'
+                                listing.condition === 'Damaged' ? 'bg-amber-100 text-amber-700' :
+                                    'bg-slate-100 text-slate-700'
                                 }`}>
                                 {listing.condition}
                             </span>
@@ -84,7 +84,7 @@ export default function ListingCard({ listing }: { listing: ListingProps }) {
                             </p>
                         </div>
                         <Link
-                            href={`/flash-trade/listings/${listing.id}`}
+                            href={`/kabadiwala/listings/${listing.id}`}
                             className="inline-flex items-center justify-center px-5 py-2.5 bg-slate-900 text-white rounded-xl font-semibold hover:bg-slate-800 transition-all shadow-lg hover:shadow-xl group-hover:translate-x-1 duration-300"
                         >
                             View Details

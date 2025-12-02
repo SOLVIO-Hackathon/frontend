@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { X, Loader2, CheckCircle } from "lucide-react";
+import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/context/AuthContext";
 
 interface BidModalProps {
     isOpen: boolean;
@@ -26,23 +28,40 @@ export default function BidModal({
 
     if (!isOpen) return null;
 
+    const { token } = useAuth();
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setMessage("");
 
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        try {
+            await apiRequest("/bids", {
+                method: "POST",
+                body: JSON.stringify({
+                    listing_id: listingId,
+                    offered_price: parseFloat(offerPrice),
+                    pickup_time_estimate: `${pickupTime} hours`,
+                    message: message || undefined,
+                }),
+                auth: true,
+                token,
+            });
 
-        setIsSubmitting(false);
-        setIsSuccess(true);
-
-        // Close after showing success
-        setTimeout(() => {
-            onClose();
-            setIsSuccess(false);
-            setOfferPrice("");
-            setMessage("");
-        }, 2000);
+            setIsSuccess(true);
+            setTimeout(() => {
+                onClose();
+                setIsSuccess(false);
+                setOfferPrice("");
+                setMessage("");
+            }, 2000);
+        } catch (e: any) {
+            console.error(e);
+            // Show error (maybe add error state to UI, but for now just log)
+            alert(e.message || "Failed to place bid");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
