@@ -84,7 +84,19 @@ export default function Navbar() {
           </>
         );
       case "collector":
-        return null; // No collector pages exist yet
+        return (
+          <>
+            <li>
+              <Link href="/collector/my-quests" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trash2 className="w-4 h-4" />My Quests</Link>
+            </li>
+            <li>
+              <Link href="/collector/workload" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Zap className="w-4 h-4" />Workload</Link>
+            </li>
+            <li>
+              <Link href="/user/leaderboard" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trophy className="w-4 h-4" />Leaderboard</Link>
+            </li>
+          </>
+        )
       default:
         return null;
     }
@@ -438,7 +450,13 @@ export default function Navbar() {
             <Link href="/admin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />Admin Panel</Link>
           </>
         )}
-        {/* No collector pages exist yet */}
+        {user && user.user_type === "collector" && (
+          <>
+            <Link href="/collector/my-quests" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trash2 className="w-4 h-4" />My Quests</Link>
+            <Link href="/collector/workload" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Zap className="w-4 h-4" />Workload</Link>
+            <Link href="/user/leaderboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trophy className="w-4 h-4" />Leaderboard</Link>
+          </>
+        )}
       </div>
     </header>
   );

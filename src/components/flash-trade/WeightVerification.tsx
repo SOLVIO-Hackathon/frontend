@@ -36,7 +36,7 @@ export default function WeightVerification({
                 method: "POST",
                 auth: true,
                 token,
-            });
+            }) as any;
             setQrData(res);
             setShowQR(true);
         } catch (e: any) {
@@ -77,7 +77,7 @@ export default function WeightVerification({
                 }),
                 auth: true,
                 token,
-            });
+            }) as any;
             onVerified(res.weight_kg);
         } catch (e: any) {
             console.error(e);

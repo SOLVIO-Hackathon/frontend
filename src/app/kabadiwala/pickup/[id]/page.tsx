@@ -26,7 +26,7 @@ export default function KabadiwalaPickupPage() {
                 setListing(listingRes);
 
                 // Fetch bids for this listing to find the accepted one
-                const bidsRes = await apiRequest(`/bids/listing/${id}`, { auth: true, token });
+                const bidsRes = await apiRequest(`/bids/listing/${id}`, { auth: true, token }) as any;
                 const accepted = bidsRes?.find((bid: any) => bid.status === "accepted");
 
                 if (!accepted) {

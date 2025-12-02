@@ -28,7 +28,7 @@ export default function UserPickupPage() {
                 // Fetch bids to find the accepted one
                 // Note: Ideally we should have an endpoint to get the accepted bid directly or it should be in the listing
                 // For now, we fetch all bids and filter
-                const bidsRes = await apiRequest(`/bids/listing/${id}`, { auth: true, token });
+                const bidsRes = await apiRequest(`/bids/listing/${id}`, { auth: true, token }) as any;
                 const accepted = bidsRes.find((b: any) => b.status === "accepted");
                 setAcceptedBid(accepted);
 
