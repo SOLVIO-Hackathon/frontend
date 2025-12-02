@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import Image from "next/image";
 import {
   Menu,
   X,
@@ -14,6 +15,7 @@ import {
   Gift,
   Trophy,
   MessageSquareWarning,
+  Zap,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -35,36 +37,33 @@ export default function Navbar() {
   return (
     <header className="w-full border-b border-slate-200/60 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
       <nav
-        className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between fade-in"
+        className="mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between fade-in"
         style={{ animationPlayState: "running" }}
       >
         {/* Logo */}
         <a href="/" className="flex items-center space-x-3 group">
-          <div className="w-8 h-8 bg-linear-to-br from-green-600 to-green-700 rounded-lg rotate-45 group-hover:rotate-12 transition-transform duration-300 flex items-center justify-center">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width={24}
-              height={24}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              data-lucide="gem"
-              className="lucide lucide-gem w-4 h-4 text-white -rotate-45"
-            >
-              <path d="M6 3h12l4 6-10 13L2 9Z" />
-              <path d="M11 3 8 9l4 13 4-13-3-6" />
-              <path d="M2 9h20" />
-            </svg>
-          </div>
+          <img
+            src="/logo.png"
+            alt="ZeroBin Logo"
+            width={64}
+            height={64}
+            className="group-hover:scale-110 transition-transform duration-300"
+          />
           <span className="text-2xl font-medium tracking-tight text-slate-900">
             ZeroBin
           </span>
         </a>
         {/* Desktop Menu */}
         <ul className="hidden lg:flex items-center space-x-8 text-sm font-medium text-slate-900">
+          <li>
+            <Link
+              href="/flash-trade"
+              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4 text-amber-500" />
+              Flash Trade
+            </Link>
+          </li>
           <li>
             <Link
               href="/user/ReportWaste"
@@ -116,11 +115,10 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center space-x-3 text-sm font-medium border-r border-slate-200 pr-4">
             <button
               onClick={() => setLanguage("en")}
-              className={`hover:text-green-600 transition-colors duration-200 flex items-center gap-1 ${
-                language === "en"
+              className={`hover:text-green-600 transition-colors duration-200 flex items-center gap-1 ${language === "en"
                   ? "text-green-600 font-semibold"
                   : "text-slate-600"
-              }`}
+                }`}
             >
               <Globe className="w-4 h-4" />
               EN
@@ -128,11 +126,10 @@ export default function Navbar() {
             <span className="text-slate-300">|</span>
             <button
               onClick={() => setLanguage("bn")}
-              className={`hover:text-green-600 transition-colors duration-200 ${
-                language === "bn"
+              className={`hover:text-green-600 transition-colors duration-200 ${language === "bn"
                   ? "text-green-600 font-semibold"
                   : "text-slate-600"
-              }`}
+                }`}
             >
               BN
             </button>
@@ -248,10 +245,16 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <div
         id="mobileMenu"
-        className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${
-          isMobileMenuOpen ? "" : "hidden"
-        }`}
+        className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${isMobileMenuOpen ? "" : "hidden"
+          }`}
       >
+        <Link
+          href="/flash-trade"
+          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+        >
+          <Zap className="w-4 h-4 text-amber-500" />
+          Flash Trade
+        </Link>
         <Link
           href="/user/ReportWaste"
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
