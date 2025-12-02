@@ -121,10 +121,10 @@ export default function RegisterPage() {
                 onChange={(e) => setUserType(e.target.value)}
                 className="block w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#2E7D32] focus:border-transparent transition-all"
               >
-                <option value="citizen">Citizen</option>
-                <option value="collector">Collector</option>
-                <option value="kabadiwala">Kabadiwala</option>
-                <option value="admin">Admin</option>
+                <option value="citizen">citizen</option>
+                <option value="collector">collector</option>
+                <option value="kabadiwala">kabadiwala</option>
+                <option value="admin">admin</option>
               </select>
             </div>
 

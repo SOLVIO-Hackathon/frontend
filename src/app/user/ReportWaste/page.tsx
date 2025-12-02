@@ -45,6 +45,38 @@ export default function ReportWaste() {
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isMapReady, setIsMapReady] = useState(false);
+  // Reports state
+  type ReportItem = {
+    id: string;
+    reporter_id: string;
+    collector_id: string | null;
+    title: string;
+    description: string;
+    location: { type: string; coordinates: [number, number] };
+    geohash: string;
+    waste_type: string;
+    severity: string;
+    status: string;
+    bounty_points: number;
+    image_url: string | null;
+    before_photo_url: string | null;
+    after_photo_url: string | null;
+    ai_verification_score: number | null;
+    created_at: string;
+    updated_at: string;
+    reporter?: {
+      id: string;
+      full_name: string;
+      user_type: string;
+      reputation_score: number;
+      is_sponsor: boolean;
+    } | null;
+    collector?: any;
+  };
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [reportsTotal, setReportsTotal] = useState<number>(0);
+  const [loadingReports, setLoadingReports] = useState<boolean>(false);
+  const [reportsError, setReportsError] = useState<string | null>(null);
 
   // Fix for default marker icon in react-leaflet
   useEffect(() => {
@@ -62,6 +94,42 @@ export default function ReportWaste() {
       setIsMapReady(true);
     }
   }, []);
+
+  // Fetch reports list
+  useEffect(() => {
+    let cancelled = false;
+    const fetchReports = async () => {
+      setLoadingReports(true);
+      setReportsError(null);
+      try {
+        const res = await fetch(`${API_BASE_URL}/quests?skip=0&limit=100`, {
+          headers: {
+            Accept: "application/json",
+            "ngrok-skip-browser-warning": "true",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        const contentType = res.headers.get("content-type") || "";
+        const text = await res.text();
+        if (!contentType.includes("application/json")) {
+          throw new Error(`Unexpected response: ${text.slice(0,150)}`);
+        }
+        const data = JSON.parse(text) as { items: ReportItem[]; total: number; skip: number; limit: number };
+        if (!cancelled) {
+          setReports(Array.isArray(data.items) ? data.items : []);
+          setReportsTotal(typeof data.total === "number" ? data.total : data.items.length);
+        }
+      } catch (e: any) {
+        if (!cancelled) setReportsError(e?.message || "Failed to load reports");
+      } finally {
+        if (!cancelled) setLoadingReports(false);
+      }
+    };
+    fetchReports();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -560,6 +628,126 @@ export default function ReportWaste() {
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Reports Cards Section */}
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
+        <div className="mt-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-slate-800">Latest Reports</h2>
+            <button
+              type="button"
+              disabled={loadingReports}
+              onClick={() => {
+                setLoadingReports(true);
+                setReportsError(null);
+                fetch(`${API_BASE_URL}/quests?skip=0&limit=100`, {
+                  headers: {
+                    Accept: "application/json",
+                    "ngrok-skip-browser-warning": "true",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                })
+                  .then(async (r) => {
+                    const ct = r.headers.get("content-type") || "";
+                    const tx = await r.text();
+                    if (!ct.includes("application/json")) throw new Error(tx.slice(0,150));
+                    return JSON.parse(tx) as { items: ReportItem[]; total: number };
+                  })
+                  .then((d) => {
+                    setReports(Array.isArray(d.items) ? d.items : []);
+                    setReportsTotal(typeof d.total === "number" ? d.total : d.items.length);
+                  })
+                  .catch((e) => setReportsError(e?.message || "Failed to load reports"))
+                  .finally(() => setLoadingReports(false));
+              }}
+              className="px-4 py-2 rounded-lg border border-slate-300 hover:bg-white/60 text-slate-700 text-sm disabled:opacity-50"
+            >
+              {loadingReports ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
+
+          {reportsError && (
+            <div className="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 text-sm">
+              {reportsError}
+            </div>
+          )}
+          {loadingReports && !reportsError && (
+            <div className="mb-6 bg-white/60 border border-slate-200 rounded-lg p-6 text-slate-700">
+              Loading reports...
+            </div>
+          )}
+          {!loadingReports && !reportsError && reports.length === 0 && (
+            <div className="mb-6 bg-white/60 border border-slate-200 rounded-lg p-6 text-slate-700">
+              No reports available.
+            </div>
+          )}
+          {!loadingReports && !reportsError && reports.length > 0 && (
+            <>
+              <p className="text-sm text-slate-600 mb-4">
+                Showing {reports.length}{reportsTotal ? ` of ${reportsTotal}` : ""} reports
+              </p>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {reports.map((r) => {
+                  const lat = r.location?.coordinates?.[1];
+                  const lng = r.location?.coordinates?.[0];
+                  return (
+                    <div
+                      key={r.id}
+                      className="group bg-white/50 backdrop-blur-sm rounded-lg border border-slate-200/60 hover:border-green-300 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col overflow-hidden"
+                    >
+                      {r.image_url && (
+                        <div className="h-40 overflow-hidden">
+                          <img
+                            src={r.image_url}
+                            alt={r.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        </div>
+                      )}
+                      <div className="p-4 flex flex-col flex-1">
+                        <h3 className="text-base font-semibold text-slate-800 mb-2 line-clamp-2">
+                          {r.title}
+                        </h3>
+                        <div className="flex flex-wrap gap-2 mb-3 text-xs">
+                          <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 font-medium capitalize">
+                            {r.waste_type}
+                          </span>
+                          <span className="px-2 py-1 rounded bg-orange-100 text-orange-800 font-medium capitalize">
+                            {r.severity}
+                          </span>
+                          <span className="px-2 py-1 rounded bg-blue-100 text-blue-800 font-medium capitalize">
+                            {r.status}
+                          </span>
+                          <span className="px-2 py-1 rounded bg-purple-100 text-purple-800 font-medium">
+                            {r.bounty_points} pts
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 mb-3 line-clamp-4">
+                          {r.description}
+                        </p>
+                        <div className="mt-auto space-y-1 text-[11px] text-slate-500">
+                          {lat && lng && (
+                            <div>
+                              📍 {lat.toFixed(5)}, {lng.toFixed(5)}
+                            </div>
+                          )}
+                          {r.reporter?.full_name && (
+                            <div>Reporter: {r.reporter.full_name}</div>
+                          )}
+                          <div>ID: {r.id.slice(0, 8)}...</div>
+                          <div>
+                            Created: {new Date(r.created_at).toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>

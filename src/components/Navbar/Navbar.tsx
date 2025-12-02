@@ -25,6 +25,7 @@ export default function Navbar() {
   const { t, language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const isCollector = user?.user_type === "collector";
 
   const toggleLanguage = () => {
     setLanguage(language === "en" ? "bn" : "en");
