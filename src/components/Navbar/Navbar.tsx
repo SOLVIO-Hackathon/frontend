@@ -40,7 +40,7 @@ export default function Navbar() {
       >
         {/* Logo */}
         <a href="/" className="flex items-center space-x-3 group">
-          <div className="w-8 h-8 bg-gradient-to-br from-green-600 to-green-700 rounded-lg rotate-45 group-hover:rotate-12 transition-transform duration-300 flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-br from-green-600 to-green-700 rounded-lg rotate-45 group-hover:rotate-12 transition-transform duration-300 flex items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width={24}
@@ -75,13 +75,13 @@ export default function Navbar() {
             </Link>
           </li>
           <li>
-            <a
-              href="#"
+            <Link
+              href="/user/listings"
               className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
             >
               <Eye className="w-4 h-4" />
-              Show Wastes
-            </a>
+              Listings
+            </Link>
           </li>
           <li>
             <a
@@ -165,7 +165,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -192,7 +192,7 @@ export default function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setOpenUserMenu((v) => !v)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg"
               >
                 <User className="w-4 h-4" />
                 {user.full_name}
@@ -259,13 +259,13 @@ export default function Navbar() {
           <Trash2 className="w-4 h-4" />
           Report Waste
         </Link>
-        <a
-          href="#"
+        <Link
+          href="/user/listings"
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
         >
           <Eye className="w-4 h-4" />
-          Show Wastes
-        </a>
+          Listings
+        </Link>
         <a
           href="#"
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
