@@ -14,7 +14,9 @@ export default function KabadiwalaPickupPage() {
     const { token } = useAuth();
     const router = useRouter();
     const [listing, setListing] = useState<any>(null);
+    const [acceptedBid, setAcceptedBid] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (!id) return;
@@ -22,8 +24,19 @@ export default function KabadiwalaPickupPage() {
             try {
                 const listingRes = await apiRequest(`/listings/${id}`, { auth: true, token });
                 setListing(listingRes);
+
+                // Fetch bids for this listing to find the accepted one
+                const bidsRes = await apiRequest(`/bids/listing/${id}`, { auth: true, token });
+                const accepted = bidsRes?.find((bid: any) => bid.status === "accepted");
+
+                if (!accepted) {
+                    setError("No accepted bid found for this listing");
+                } else {
+                    setAcceptedBid(accepted);
+                }
             } catch (e) {
                 console.error(e);
+                setError("Failed to load pickup details");
             } finally {
                 setLoading(false);
             }
@@ -33,7 +46,7 @@ export default function KabadiwalaPickupPage() {
 
     const handleVerified = (weight: number) => {
         alert(`Pickup confirmed! Weight: ${weight}kg. Payment initiated.`);
-        router.push("/kabadiwala/dashboard"); // Redirect to dashboard
+        router.push("/"); // Redirect to dashboard
     };
 
     if (loading) {
@@ -48,6 +61,19 @@ export default function KabadiwalaPickupPage() {
         return (
             <div className="min-h-screen flex items-center justify-center bg-slate-50">
                 <p className="text-slate-500">Listing not found.</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="text-center">
+                    <p className="text-red-500 mb-4">{error}</p>
+                    <Link href="/kabadiwala/my-bids" className="text-emerald-600 hover:underline">
+                        Back to My Bids
+                    </Link>
+                </div>
             </div>
         );
     }
@@ -76,6 +102,7 @@ export default function KabadiwalaPickupPage() {
                     <WeightVerification
                         userRole="kabadiwala"
                         listingId={id as string}
+                        bidId={acceptedBid?.id}
                         onVerified={handleVerified}
                     />
                 </div>

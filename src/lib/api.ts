@@ -8,6 +8,8 @@ interface RequestOptions extends RequestInit {
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const url = path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
 
+  console.log("API Request:", { url, auth: options.auth, hasToken: !!options.token });
+
   const headers: Record<string, string> = {
     ...(DEFAULT_HEADERS as Record<string, string>),
     ...(options.headers as Record<string, string> || {}),
@@ -22,28 +24,55 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     headers.Authorization = `Bearer ${options.token}`;
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  const contentType = response.headers.get("content-type");
-  let body: any = null;
-  if (contentType && contentType.includes("application/json")) {
-    body = await response.json();
-  } else {
-    body = await response.text();
-  }
+    console.log("API Response:", { status: response.status, statusText: response.statusText, ok: response.ok });
 
-  if (!response.ok) {
-    const messageCandidate = body?.message || body?.detail || response.statusText || "Request failed";
-    const error: ApiErrorShape = {
-      status: response.status,
-      message: typeof messageCandidate === "string" ? messageCandidate : "Request failed",
-      details: body,
+    const contentType = response.headers.get("content-type");
+    let body: any = null;
+    
+    try {
+      if (contentType && contentType.includes("application/json")) {
+        body = await response.json();
+      } else {
+        body = await response.text();
+      }
+    } catch (parseError) {
+      console.error("Failed to parse response body:", parseError);
+      body = null;
+    }
+
+    if (!response.ok) {
+      const messageCandidate = body?.message || body?.detail || response.statusText || "Request failed";
+      const error: ApiErrorShape = {
+        status: response.status,
+        message: typeof messageCandidate === "string" ? messageCandidate : "Request failed",
+        details: body,
+      };
+      console.error("API Error:", error);
+      console.error("Full response body:", body);
+      throw error;
+    }
+
+    return body as T;
+  } catch (error: any) {
+    // Handle network errors or fetch failures
+    if (error.status) {
+      // Already an API error, rethrow
+      throw error;
+    }
+    
+    // Network error or other fetch failure
+    console.error("Network or fetch error:", error);
+    const networkError: ApiErrorShape = {
+      status: 0,
+      message: error.message || "Network error - please check your connection",
+      details: { originalError: error.toString() },
     };
-    throw error;
+    throw networkError;
   }
-
-  return body as T;
 }

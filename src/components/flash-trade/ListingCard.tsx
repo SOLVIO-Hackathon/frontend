@@ -20,15 +20,22 @@ interface ListingProps {
 export default function ListingCard({ listing }: { listing: ListingProps }) {
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
-            <div className="flex flex-col sm:flex-row">
+            <div className="flex flex-col">
                 {/* Image Section */}
-                <div className="relative w-full sm:w-48 h-48 sm:h-auto overflow-hidden">
-                    <Image
-                        src={listing.image_url}
-                        alt={listing.device_name}
-                        fill
-                        className="object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
+                <div className="relative w-full h-56 overflow-hidden bg-slate-100">
+                    {listing.image_url ? (
+                        <Image
+                            src={listing.image_url}
+                            alt={listing.device_name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                            unoptimized
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-slate-400">
+                            <span className="text-sm">No Image Available</span>
+                        </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-slate-700 shadow-sm border border-slate-100">
                         {listing.device_type}
@@ -36,7 +43,7 @@ export default function ListingCard({ listing }: { listing: ListingProps }) {
                 </div>
 
                 {/* Content Section */}
-                <div className="flex-1 p-6 flex flex-col justify-between">
+                <div className="p-6 flex flex-col justify-between">
                     <div>
                         <div className="flex justify-between items-start mb-2">
                             <h3 className="text-lg font-bold text-slate-900 line-clamp-1 group-hover:text-green-700 transition-colors">

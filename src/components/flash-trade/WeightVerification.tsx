@@ -51,20 +51,15 @@ export default function WeightVerification({
         // Simulate scanning delay - In real app use a QR scanner library
         setTimeout(() => {
             setIsScanning(false);
-            // Mocking the scanned data structure expected by backend
-            // In reality, this would come from the camera
-            // We need the transaction_id (bidId) and listing_id
-            // Since we don't have a real scanner, we'll assume we scanned the correct QR
-            // But wait, the Kabadiwala needs to scan the QR shown by the Seller.
-            // The Seller's QR contains `qr_data`.
-            // For simulation, we'll just construct a valid payload if we have the IDs,
-            // or ask the user to "Paste QR Data" if we want to be strict.
-            // For now, let's simulate success if we are on the correct page.
-            setScannedData(JSON.stringify({
-                type: "transaction",
-                listing_id: listingId,
-                transaction_id: bidId || "unknown" // This might fail if bidId is not passed to Kabadiwala view
-            }));
+            // Backend expects QR data in format: "transaction:{bid_id}:{listing_id}:{amount}:confirm"
+            // For simulation, construct the QR data string matching the backend's parse_qr_data format
+            if (!bidId) {
+                setError("Bid ID is required for weight confirmation");
+                return;
+            }
+            // Amount is set to 0 as placeholder - it's not validated in weight confirmation
+            const qrData = `transaction:${bidId}:${listingId}:0:confirm`;
+            setScannedData(qrData);
         }, 2000);
     };
 

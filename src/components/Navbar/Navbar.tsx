@@ -34,6 +34,59 @@ export default function Navbar() {
     setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
+  // Helper to render role-based nav links
+  const renderNavLinks = () => {
+    if (!user) return null;
+    switch (user.user_type) {
+      case "citizen":
+        return (
+          <>
+            <li>
+              <Link href="/user/ReportWaste" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trash2 className="w-4 h-4" />Report Waste</Link>
+            </li>
+            <li>
+              <Link href="/user/listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />Listings</Link>
+            </li>
+            <li>
+              <Link href="/user/my-listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Recycle className="w-4 h-4" />My Listings</Link>
+            </li>
+            {/* Rewards page does not exist */}
+            <li>
+              <Link href="/user/leaderboard" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trophy className="w-4 h-4" />Leaderboard</Link>
+            </li>
+            <li>
+              <Link href="/user/complain" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><MessageSquareWarning className="w-4 h-4" />Complain</Link>
+            </li>
+          </>
+        );
+      case "kabadiwala":
+        return (
+          <>
+            <li>
+              <Link href="/kabadiwala/my-bids" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />My Bids</Link>
+            </li>
+            <li>
+              <Link href="/kabadiwala/listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Recycle className="w-4 h-4" />Available Pickups</Link>
+            </li>
+            {/* Bidding History page does not exist */}
+          </>
+        );
+      case "admin":
+        return (
+          <>
+            <li>
+              <Link href="/admin" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />Admin Panel</Link>
+            </li>
+            {/* Dashboard, Reviews, Heatmap pages do not exist */}
+          </>
+        );
+      case "collector":
+        return null; // No collector pages exist yet
+      default:
+        return null;
+    }
+  };
+
   return (
     <header className="w-full border-b border-slate-200/60 bg-white/95 backdrop-blur-sm sticky top-0 z-50">
       <nav
@@ -55,60 +108,7 @@ export default function Navbar() {
         </a>
         {/* Desktop Menu */}
         <ul className="hidden lg:flex items-center space-x-8 text-sm font-medium text-slate-900">
-          <li>
-            <Link
-              href="/user/ReportWaste"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              Report Waste
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/user/listings"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Eye className="w-4 h-4" />
-              Listings
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/user/my-listings"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Recycle className="w-4 h-4" />
-              My Listings
-            </Link>
-          </li>
-          <li>
-            <a
-              href="#"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Gift className="w-4 h-4" />
-              Rewards
-            </a>
-          </li>
-          <li>
-            <Link
-              href="/user/leaderboard"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <Trophy className="w-4 h-4" />
-              Leaderboard
-            </Link>
-          </li>
-          <li>
-            <Link
-              href="/user/complain"
-              className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
-            >
-              <MessageSquareWarning className="w-4 h-4" />
-              Complain
-            </Link>
-          </li>
+          {renderNavLinks()}
         </ul>
         {/* Actions */}
         <div className="flex items-center space-x-4">
@@ -245,58 +245,29 @@ export default function Navbar() {
       {/* Mobile Menu */}
       <div
         id="mobileMenu"
-        className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${isMobileMenuOpen ? "" : "hidden"
-          }`}
+        className={`lg:hidden mx-4 pb-4 space-y-3 text-sm font-medium ${isMobileMenuOpen ? "" : "hidden"}`}
       >
-        <Link
-          href="/flash-trade"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Zap className="w-4 h-4 text-amber-500" />
-          Flash Trade
-        </Link>
-        <Link
-          href="/user/ReportWaste"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Trash2 className="w-4 h-4" />
-          Report Waste
-        </Link>
-        <Link
-          href="/user/listings"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Eye className="w-4 h-4" />
-          Listings
-        </Link>
-        <Link
-          href="/user/my-listings"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Recycle className="w-4 h-4" />
-          My Listings
-        </Link>
-        <a
-          href="#"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Gift className="w-4 h-4" />
-          Rewards
-        </a>
-        <Link
-          href="/user/leaderboard"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <Trophy className="w-4 h-4" />
-          Leaderboard
-        </Link>
-        <Link
-          href="/user/complain"
-          className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
-        >
-          <MessageSquareWarning className="w-4 h-4" />
-          Complain
-        </Link>
+        {user && user.user_type === "citizen" && (
+          <>
+            <Link href="/user/ReportWaste" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trash2 className="w-4 h-4" />Report Waste</Link>
+            <Link href="/user/listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />Listings</Link>
+            <Link href="/user/my-listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Recycle className="w-4 h-4" />My Listings</Link>
+            <Link href="/user/leaderboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trophy className="w-4 h-4" />Leaderboard</Link>
+            <Link href="/user/complain" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><MessageSquareWarning className="w-4 h-4" />Complain</Link>
+          </>
+        )}
+        {user && user.user_type === "kabadiwala" && (
+          <>
+            <Link href="/kabadiwala/my-bids" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />My Bids</Link>
+            <Link href="/kabadiwala/listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Recycle className="w-4 h-4" />Available Pickups</Link>
+          </>
+        )}
+        {user && user.user_type === "admin" && (
+          <>
+            <Link href="/admin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />Admin Panel</Link>
+          </>
+        )}
+        {/* No collector pages exist yet */}
       </div>
     </header>
   );

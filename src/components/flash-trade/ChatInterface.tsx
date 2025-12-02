@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Phone, AlertCircle, Loader2 } from "lucide-react";
+import { Send, Phone, AlertCircle, Loader2, Lock, Unlock } from "lucide-react";
 import { apiRequest } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
 
@@ -23,7 +23,8 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
     const [messages, setMessages] = useState<Message[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
-    const [chatStatus, setChatStatus] = useState<string>("locked");
+    const [chatStatus, setChatStatus] = useState<string>("unlocked");
+    const [unlocking, setUnlocking] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const fetchMessages = async () => {
@@ -65,12 +66,36 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
                 body: JSON.stringify({ content: newMessage }),
                 auth: true,
                 token,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             setMessages([...messages, msg]);
             setNewMessage("");
         } catch (e) {
             console.error("Failed to send message", e);
-            alert("Failed to send message. Chat might be locked.");
+            alert("Failed to send message. Please try again.");
+        }
+    };
+
+    const handleUnlockChat = async () => {
+        setUnlocking(true);
+        try {
+            const updatedChat = await apiRequest(`/chats/${chatId}/confirm-deal`, {
+                method: "POST",
+                body: JSON.stringify({ confirm: true }),
+                auth: true,
+                token,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            setChatStatus(updatedChat.status);
+        } catch (e) {
+            console.error("Failed to unlock chat", e);
+            alert("Failed to unlock chat. Please try again.");
+        } finally {
+            setUnlocking(false);
         }
     };
 
@@ -79,6 +104,8 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
     }
 
     const isLocked = chatStatus === "locked";
+    const isClosed = chatStatus === "closed";
+    const canSendMessages = !isLocked && !isClosed;
 
     return (
         <div className="flex flex-col h-[600px] bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -87,7 +114,7 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
                 <div>
                     <h3 className="font-bold text-slate-900">Chat</h3>
                     <p className="text-xs text-slate-500">
-                        {isLocked ? "Deal Pending Confirmation" : "Deal Confirmed • Pickup in progress"}
+                        {isClosed ? "Transaction Completed" : "Transaction in Progress"}
                     </p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-100">
@@ -128,10 +155,10 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
 
             {/* Input */}
             <form onSubmit={handleSend} className="p-4 border-t border-slate-100 bg-white">
-                {isLocked && (
-                    <div className="mb-3 p-3 bg-amber-50 border border-amber-100 rounded-lg text-xs text-amber-800 flex items-center gap-2">
+                {isClosed && (
+                    <div className="mb-3 p-3 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-600 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
-                        Chat is locked until the deal is confirmed by both parties.
+                        This chat has been closed as the transaction is complete.
                     </div>
                 )}
                 <div className="flex gap-2">
@@ -139,13 +166,13 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder={isLocked ? "Chat is locked..." : "Type a message..."}
-                        disabled={isLocked}
+                        placeholder={isClosed ? "Chat is closed..." : "Type a message..."}
+                        disabled={isClosed}
                         className="flex-1 px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none disabled:bg-slate-50 disabled:text-slate-400"
                     />
                     <button
                         type="submit"
-                        disabled={!newMessage.trim() || isLocked}
+                        disabled={!newMessage.trim() || isClosed}
                         className="p-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Send className="w-5 h-5" />

@@ -43,7 +43,7 @@ export default function UserPickupPage() {
 
     const handleVerified = (weight: number) => {
         alert(`Pickup confirmed! Weight: ${weight}kg. Payment initiated.`);
-        router.push("/user/dashboard"); // Redirect to dashboard
+        router.push("/"); // Redirect to dashboard
     };
 
     if (loading) {

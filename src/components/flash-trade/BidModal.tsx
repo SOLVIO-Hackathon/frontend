@@ -70,7 +70,7 @@ export default function BidModal({
                 {!isSuccess ? (
                     <>
                         <div className="flex items-center justify-between p-6 border-b border-slate-100">
-                            <h3 className="text-xl font-bold text-slate-900">Place a Bid</h3>
+                            <h3 className="text-xl font-bold text-slate-900">Offer Pickup Service</h3>
                             <button
                                 onClick={onClose}
                                 className="p-2 hover:bg-slate-100 rounded-full transition-colors"
@@ -88,7 +88,7 @@ export default function BidModal({
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Your Offer (Tk)
+                                    Your Offer Price (Tk)
                                 </label>
                                 <input
                                     type="number"
@@ -96,8 +96,9 @@ export default function BidModal({
                                     value={offerPrice}
                                     onChange={(e) => setOfferPrice(e.target.value)}
                                     placeholder={`e.g. ${(estimatedMin + estimatedMax) / 2}`}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-slate-900"
                                 />
+                                <p className="text-xs text-slate-500 mt-1.5">Enter the amount you'll pay to collect this e-waste</p>
                             </div>
 
                             <div>
@@ -107,7 +108,7 @@ export default function BidModal({
                                 <select
                                     value={pickupTime}
                                     onChange={(e) => setPickupTime(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none text-slate-900"
                                 >
                                     <option value="1">Within 1 hour</option>
                                     <option value="2">Within 2 hours</option>
@@ -118,13 +119,13 @@ export default function BidModal({
 
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                                    Message (Optional)
+                                    Additional Message (Optional)
                                 </label>
                                 <textarea
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
-                                    placeholder="I can pick it up immediately..."
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none h-24"
+                                    placeholder="I can arrive early and provide immediate service..."
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all outline-none resize-none h-24 text-slate-900"
                                 />
                             </div>
 
@@ -136,10 +137,10 @@ export default function BidModal({
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="w-5 h-5 animate-spin" />
-                                        Submitting...
+                                        Submitting Offer...
                                     </>
                                 ) : (
-                                    "Confirm Bid"
+                                    "Submit Pickup Offer"
                                 )}
                             </button>
                         </form>
@@ -150,10 +151,10 @@ export default function BidModal({
                             <CheckCircle className="w-8 h-8 text-green-600" />
                         </div>
                         <h3 className="text-2xl font-bold text-slate-900 mb-2">
-                            Bid Placed!
+                            Offer Submitted!
                         </h3>
                         <p className="text-slate-600">
-                            The seller has been notified of your offer.
+                            The seller has been notified of your pickup offer.
                         </p>
                     </div>
                 )}

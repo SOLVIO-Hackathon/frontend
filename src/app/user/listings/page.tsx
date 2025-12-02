@@ -236,14 +236,19 @@ export default function ListingsPage() {
 				location: { latitude: lat, longitude: lng },
 			};
 
-			console.log("Submitting listing with payload:", payload);
+			console.log("=== LISTING CREATION DEBUG ===");
+			console.log("Submitting listing with payload:", JSON.stringify(payload, null, 2));
+			console.log("API URL:", `${process.env.NEXT_PUBLIC_API_BASE_URL}/listings`);
+			console.log("Token available:", !!token);
 
-			await apiRequest("/listings", {
+			const result = await apiRequest("/listings", {
 				method: "POST",
 				body: JSON.stringify(payload),
 				auth: true,
 				token,
 			});
+
+			console.log("Listing created successfully:", result);
 
 			setMessage("Listing created successfully. Redirecting...");
 			// Navigate to my-listings page
@@ -252,7 +257,24 @@ export default function ListingsPage() {
 			}, 1000);
 		} catch (e: any) {
 			console.error("Failed to create listing:", e);
-			const errorMsg = e?.message || e?.details?.detail || "Failed to create listing";
+			console.error("Error details:", JSON.stringify(e, null, 2));
+			
+			// Extract more detailed error information
+			let errorMsg = "Failed to create listing";
+			
+			if (e?.details?.detail) {
+				// FastAPI validation errors
+				if (Array.isArray(e.details.detail)) {
+					errorMsg = e.details.detail.map((err: any) => 
+						`${err.loc?.join('.')}: ${err.msg}`
+					).join(", ");
+				} else {
+					errorMsg = e.details.detail;
+				}
+			} else if (e?.message) {
+				errorMsg = e.message;
+			}
+			
 			setMessage(`Error: ${errorMsg}`);
 		} finally {
 			setSubmitting(false);
