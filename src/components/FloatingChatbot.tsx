@@ -11,13 +11,8 @@ import {
   MicOff,
   Volume2,
   VolumeX,
-  MapPin,
-  Image as ImageIcon,
-  Navigation,
-  ChevronDown,
   Loader2,
 } from "lucide-react";
-import { uploadToFirebase } from "@/lib/upload";
 
 // Types
 interface Message {
@@ -25,168 +20,9 @@ interface Message {
   text: string;
   isBot: boolean;
   timestamp: string;
-  image?: string;
   isLoading?: boolean;
   isError?: boolean;
 }
-
-interface LocationData {
-  latitude: number;
-  longitude: number;
-  timestamp: string;
-  source: "gps" | "map_selection";
-  accuracy?: number;
-}
-
-// Map-related dynamic imports
-let MapContainer: any, TileLayer: any, Marker: any, useMapEvents: any, L: any;
-let mapComponentsLoaded = false;
-
-const loadMapComponents = async () => {
-  if (mapComponentsLoaded) return;
-
-  try {
-    const leaflet = await import("leaflet");
-    const reactLeaflet = await import("react-leaflet");
-    // Import CSS dynamically
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-
-    L = leaflet.default;
-    MapContainer = reactLeaflet.MapContainer;
-    TileLayer = reactLeaflet.TileLayer;
-    Marker = reactLeaflet.Marker;
-    useMapEvents = reactLeaflet.useMapEvents;
-
-    // Fix Leaflet default marker icons
-    const markerIcon2x = (await import("leaflet/dist/images/marker-icon-2x.png")).default;
-    const markerIcon = (await import("leaflet/dist/images/marker-icon.png")).default;
-    const markerShadow = (await import("leaflet/dist/images/marker-shadow.png")).default;
-
-    const DefaultIcon = L.icon({
-      iconRetinaUrl: markerIcon2x,
-      iconUrl: markerIcon,
-      shadowUrl: markerShadow,
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41],
-    });
-    L.Marker.prototype.options.icon = DefaultIcon;
-
-    mapComponentsLoaded = true;
-  } catch (error) {
-    console.error("Failed to load map components:", error);
-  }
-};
-
-// LocationMarker component
-const LocationMarker = ({ position, setPosition }: any) => {
-  useMapEvents({
-    click: (e: any) => {
-      const { lat, lng } = e.latlng;
-      setPosition({ lat, lng });
-    },
-  });
-
-  return position ? <Marker position={[position.lat, position.lng]} /> : null;
-};
-
-// MapModal component
-interface MapModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onLocationSelect: (position: { lat: number; lng: number }) => void;
-}
-
-const MapModal = ({ isOpen, onClose, onLocationSelect }: MapModalProps) => {
-  const [tempPosition, setTempPosition] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapCenter] = useState<[number, number]>([20, 0]);
-  const [mapZoom] = useState(2);
-  const [mapsLoaded, setMapsLoaded] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && !mapComponentsLoaded) {
-      loadMapComponents().then(() => setMapsLoaded(true));
-    }
-  }, [isOpen]);
-
-  const handleConfirm = () => {
-    if (tempPosition) {
-      onLocationSelect(tempPosition);
-      onClose();
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999]">
-      <div className="bg-white rounded-lg shadow-2xl w-[90%] max-w-2xl max-h-[80vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-4 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-5 w-5" />
-            <h3 className="font-bold">Select Location on Map</h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Map */}
-        <div className="h-96 relative">
-          {mapsLoaded && MapContainer ? (
-            <MapContainer
-              center={mapCenter}
-              zoom={mapZoom}
-              style={{ height: "100%", width: "100%" }}
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <LocationMarker position={tempPosition} setPosition={setTempPosition} />
-            </MapContainer>
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-8 w-8 animate-spin text-green-600" />
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-gray-200">
-          {tempPosition && (
-            <p className="text-sm text-gray-600 mb-3">
-              Selected: {tempPosition.lat.toFixed(6)}, {tempPosition.lng.toFixed(6)}
-            </p>
-          )}
-          <div className="flex gap-2 justify-end">
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleConfirm}
-              disabled={!tempPosition}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Confirm Location
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 // ChatMessage component
 interface ChatMessageProps {
@@ -209,25 +45,12 @@ const ChatMessage = ({ message, isBot }: ChatMessageProps) => {
             : "bg-gradient-to-r from-green-600 to-emerald-600 text-white"
         }`}
       >
-        {/* Image thumbnail if present */}
-        {message.image && (
-          <div className="mb-2">
-            <img
-              src={message.image}
-              alt="Uploaded"
-              className="rounded-lg max-w-full h-auto max-h-48 object-cover"
-            />
-          </div>
-        )}
-        {/* Display clean text */}
         <p className="text-sm whitespace-pre-wrap">
           {message.isLoading ? (
             <span className="flex items-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
               Thinking...
             </span>
-          ) : message.image && message.text.includes("data:image") ? (
-            "I found waste, here's a photo"
           ) : (
             message.text
           )}
@@ -254,7 +77,7 @@ export default function FloatingChatbot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 1,
-      text: "Hello! I'm your EcoAssistant. How can I help you with waste management or recycling today?",
+      text: "Hello! I'm your EcoAssistant. I can help you with:\n\n• Answer waste management questions\n• Check your quests and stats\n• Provide recycling advice\n\nHow can I help you today?",
       isBot: true,
       timestamp: formatTime(new Date()),
     },
@@ -267,14 +90,6 @@ export default function FloatingChatbot() {
   const [ttsEnabled, setTtsEnabled] = useState(false);
   const recognitionRef = useRef<any>(null);
   const messageRef = useRef("");
-
-  // Location and Image
-  const [locationData, setLocationData] = useState<LocationData | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [showLocationMenu, setShowLocationMenu] = useState(false);
-  const locationMenuRef = useRef<HTMLDivElement>(null);
 
   // API base URL
   const FASTAPI_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
@@ -367,146 +182,12 @@ export default function FloatingChatbot() {
     }
   }, [messages, isOpen]);
 
-  // Close location menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (locationMenuRef.current && !locationMenuRef.current.contains(event.target as Node)) {
-        setShowLocationMenu(false);
-      }
-    };
-
-    if (showLocationMenu) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [showLocationMenu]);
-
   const toggleListening = () => {
     if (isListening) {
       recognitionRef.current?.stop();
     } else {
       recognitionRef.current?.start();
     }
-  };
-
-  // Get current GPS location
-  const getCurrentLocation = () => {
-    setShowLocationMenu(false);
-    if (!navigator.geolocation) {
-      alert("Geolocation is not supported by your browser");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        const location: LocationData = {
-          latitude,
-          longitude,
-          timestamp: new Date().toISOString(),
-          source: "gps",
-          accuracy,
-        };
-        setLocationData(location);
-
-        // Auto-send location message to agent
-        const locationMsg = `[Location captured via GPS: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}]`;
-        handleSubmit(null, locationMsg);
-      },
-      (error) => {
-        console.error("Error getting location:", error);
-        alert("Unable to retrieve your location. Please try again or select on map.");
-      }
-    );
-  };
-
-  // Open map for location selection
-  const openMapModal = () => {
-    setShowLocationMenu(false);
-    setIsMapModalOpen(true);
-  };
-
-  // Handle location selected from map
-  const handleMapLocationSelect = (position: { lat: number; lng: number }) => {
-    const location: LocationData = {
-      latitude: position.lat,
-      longitude: position.lng,
-      timestamp: new Date().toISOString(),
-      source: "map_selection",
-    };
-    setLocationData(location);
-
-    // Auto-send location message to agent
-    const locationMsg = `[Location selected on map: ${position.lat.toFixed(6)}, ${position.lng.toFixed(6)}]`;
-    handleSubmit(null, locationMsg);
-  };
-
-  // Handle image file selection
-  const handleImageSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please select an image file");
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB");
-      return;
-    }
-
-    try {
-      // Create preview for UI - wait for it to load
-      const previewImage = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      // Upload image to Firebase Storage
-      const imageUrl = await uploadToFirebase(file);
-
-      // Create user message with preview (for UI display only)
-      const userMessage: Message = {
-        id: messages.length + 1,
-        text: "I found waste, here's a photo",
-        isBot: false,
-        timestamp: formatTime(new Date()),
-        image: previewImage, // Show preview in chat UI
-      };
-
-      setMessages((prev) => [...prev, userMessage]);
-
-      // Clear preview state
-      clearImage();
-
-      // Send ONLY the Firebase URL to backend (not the preview)
-      const imageMsg = `Here is the waste image URL: ${imageUrl}`;
-      await sendToBackend(imageMsg);
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      alert("Failed to upload image. Please try again.");
-      clearImage();
-    }
-  };
-
-  // Clear selected image
-  const clearImage = () => {
-    setImagePreview(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  // Clear location
-  const clearLocation = () => {
-    setLocationData(null);
   };
 
   const toggleChat = () => {
@@ -534,20 +215,12 @@ export default function FloatingChatbot() {
       const requestBody: {
         message: string;
         session_id?: string | null;
-        metadata?: { location?: LocationData };
       } = {
         message: text,
       };
 
       if (sessionId) {
         requestBody.session_id = sessionId;
-      }
-
-      // Add metadata if location data exists
-      if (locationData) {
-        requestBody.metadata = {
-          location: locationData,
-        };
       }
 
       // Call the ReAct Agent API endpoint
@@ -561,7 +234,8 @@ export default function FloatingChatbot() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get response from chatbot");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.detail || "Failed to get response from chatbot");
       }
       const data = await response.json();
 
@@ -586,6 +260,7 @@ export default function FloatingChatbot() {
           },
         ];
       });
+
       speak(botText);
     } catch (error) {
       console.error("Error:", error);
@@ -596,7 +271,7 @@ export default function FloatingChatbot() {
           ...filtered,
           {
             id: filtered.length + 1,
-            text: "Sorry, I encountered an error. Please try again later.",
+            text: error instanceof Error ? error.message : "Sorry, I encountered an error. Please try again later.",
             isBot: true,
             timestamp: formatTime(new Date()),
             isError: true,
@@ -611,22 +286,15 @@ export default function FloatingChatbot() {
     if (e) e.preventDefault();
     if (!text.trim()) return;
 
-    // Show image preview in chat UI if available
     const userMessage: Message = {
       id: messages.length + 1,
       text,
       isBot: false,
       timestamp: formatTime(new Date()),
-      image: imagePreview ?? undefined, // Show preview in UI only
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setMessage("");
-
-    // Clear image preview after sending
-    if (imagePreview) {
-      clearImage();
-    }
 
     // Send to backend
     await sendToBackend(text);
@@ -672,33 +340,6 @@ export default function FloatingChatbot() {
 
           {/* Input Area */}
           <form onSubmit={handleSubmit} className="border-t border-gray-200 bg-white rounded-b-2xl">
-            {/* Location and Image Status */}
-            {(locationData || imagePreview) && (
-              <div className="px-3 pt-2 pb-1 border-b border-gray-100">
-                <div className="flex flex-wrap gap-2">
-                  {locationData && (
-                    <div className="flex items-center gap-1 bg-green-50 text-green-700 px-2 py-1 rounded-full text-xs">
-                      <MapPin className="h-3 w-3" />
-                      <span>Location set</span>
-                      <button type="button" onClick={clearLocation} className="ml-1 hover:text-green-900">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                  {imagePreview && (
-                    <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs">
-                      <ImageIcon className="h-3 w-3" />
-                      <span>Image attached</span>
-                      <button type="button" onClick={clearImage} className="ml-1 hover:text-blue-900">
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Main Input Area - Two Rows */}
             <div className="p-3">
               {/* Top Row - Action Icons */}
               <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-100">
@@ -720,60 +361,6 @@ export default function FloatingChatbot() {
                 >
                   {ttsEnabled ? <Volume2 className="h-5 w-5" /> : <VolumeX className="h-5 w-5" />}
                 </button>
-
-                {/* Location Dropdown Menu */}
-                <div className="relative" ref={locationMenuRef}>
-                  <button
-                    type="button"
-                    onClick={() => setShowLocationMenu(!showLocationMenu)}
-                    className={`p-2 ${
-                      locationData ? "text-green-600" : "text-gray-400"
-                    } hover:text-green-600 transition-colors flex items-center`}
-                    title="Add location"
-                  >
-                    <MapPin className="h-5 w-5" />
-                    <ChevronDown className="h-3 w-3 ml-0.5" />
-                  </button>
-
-                  {showLocationMenu && (
-                    <div className="absolute bottom-full left-0 mb-2 bg-white border border-gray-200 rounded-lg shadow-lg min-w-[180px] z-50">
-                      <button
-                        type="button"
-                        onClick={getCurrentLocation}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 rounded-t-lg"
-                      >
-                        <Navigation className="h-4 w-4 text-green-600" />
-                        <span>Use GPS Location</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={openMapModal}
-                        className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 flex items-center gap-2 border-t border-gray-100 rounded-b-lg"
-                      >
-                        <MapPin className="h-4 w-4 text-green-600" />
-                        <span>Select on Map</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`p-2 ${
-                    imagePreview ? "text-blue-600" : "text-gray-400"
-                  } hover:text-green-600 transition-colors`}
-                  title="Attach image"
-                >
-                  <ImageIcon className="h-5 w-5" />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageSelect}
-                  className="hidden"
-                />
               </div>
 
               {/* Bottom Row - Text Input and Send Button */}
@@ -832,9 +419,6 @@ export default function FloatingChatbot() {
           <div className="absolute inset-0 w-16 h-16 rounded-full bg-green-600 animate-ping opacity-20 pointer-events-none"></div>
         )}
       </div>
-
-      {/* Map Modal */}
-      <MapModal isOpen={isMapModalOpen} onClose={() => setIsMapModalOpen(false)} onLocationSelect={handleMapLocationSelect} />
     </>
   );
 }

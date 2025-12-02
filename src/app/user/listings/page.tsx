@@ -124,62 +124,60 @@ export default function ListingsPage() {
 				analyzeImage(urls[0]);
 			}
 
-			return urls;
-		} catch (e: any) {
-			setMessage(e?.message || "Failed to upload images");
-			throw e;
-		} finally {
-			setUploading(false);
+		return urls;
+	} catch (e: any) {
+		setMessage(e?.message || "Failed to upload images");
+		throw e;
+	} finally {
+		setUploading(false);
+	}
+};
+
+const analyzeImage = async (url: string) => {
+	setAnalyzing(true);
+	try {
+		const res = await apiRequest("/listings/analyze", {
+			method: "POST",
+			body: JSON.stringify({ image_url: url, description: description || "" }),
+			auth: true,
+			token,
+	}) as AIAnalysisResponse;
+	console.log("AI Analysis response:", res);
+	setAiAnalysis(res);
+
+	// Auto-fill fields if empty
+	if (!deviceName && res.device_name) {
+		console.log("Setting device name:", res.device_name);
+		setDeviceName(res.device_name);
+	}
+	if (res.device_type) {
+		const backendType = res.device_type.toLowerCase() as DeviceType;
+		console.log("Setting device type:", backendType);
+		// Validate it's a valid DeviceType
+		if (["laptop", "mobile", "tablet", "desktop", "monitor", "other"].includes(backendType)) {
+			setDeviceType(backendType);
 		}
-	};
-
-	const analyzeImage = async (url: string) => {
-		setAnalyzing(true);
-		try {
-			const res = await apiRequest("/listings/analyze", {
-				method: "POST",
-				body: JSON.stringify({ image_url: url, description: description || "" }),
-				auth: true,
-				token,
-			}) as AIAnalysisResponse;
-			console.log("AI Analysis response:", res);
-			setAiAnalysis(res);
-
-			// Auto-fill fields if empty
-			if (!deviceName && res.device_name) {
-				console.log("Setting device name:", res.device_name);
-				setDeviceName(res.device_name);
-			}
-			if (res.device_type) {
-				const backendType = res.device_type.toLowerCase() as DeviceType;
-				console.log("Setting device type:", backendType);
-				// Validate it's a valid DeviceType
-				if (["laptop", "mobile", "tablet", "desktop", "monitor", "other"].includes(backendType)) {
-					setDeviceType(backendType);
-				}
-			}
-			if (res.condition) {
-				const backendCondition = res.condition.toLowerCase() as Condition;
-				console.log("Setting condition:", backendCondition);
-				// Validate it's a valid Condition
-				if (["working", "partially_working", "not_working"].includes(backendCondition)) {
-					setCondition(backendCondition);
-				}
-			}
-			if (!description && res.condition_notes) {
-				console.log("Setting description from condition_notes:", res.condition_notes);
-				setDescription(res.condition_notes);
-			}
-
-		} catch (e) {
-			console.error("AI Analysis failed", e);
-			setMessage("AI analysis failed. Please fill in the details manually.");
-		} finally {
-			setAnalyzing(false);
+	}
+	if (res.condition) {
+		const backendCondition = res.condition.toLowerCase() as Condition;
+		console.log("Setting condition:", backendCondition);
+		// Validate it's a valid Condition
+		if (["working", "partially_working", "not_working"].includes(backendCondition)) {
+			setCondition(backendCondition);
 		}
-	};
+	}
+	if (!description && res.condition_notes) {
+		console.log("Setting description from condition_notes:", res.condition_notes);
+		setDescription(res.condition_notes);
+	}
 
-	const handleUseMyLocation = () => {
+} catch (e) {
+	console.error("AI Analysis failed", e);
+	setMessage("AI analysis failed. Please fill in the details manually.");
+} finally {
+	setAnalyzing(false);
+}
+};	const handleUseMyLocation = () => {
 		setMessage(null);
 		if (!navigator.geolocation) {
 			setMessage("Geolocation is not supported by your browser.");
