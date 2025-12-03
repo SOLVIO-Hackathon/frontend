@@ -18,6 +18,28 @@ body {
   --secondary: #E8F5E9; /* Light green tint */
   --secondary-foreground: #1B5E20;
   --accent: #66BB6A; /* Accent green */
+
+  /* Role-based theme colors (default: citizen/green) */
+  --theme-primary: #10b981;
+  --theme-primary-hex: #10b981;
+}
+
+/* Admin role - Red theme */
+[data-user-role="admin"] {
+  --theme-primary: #ef4444;
+  --theme-primary-hex: #ef4444;
+}
+
+/* Kabadiwala role - Blue theme */
+[data-user-role="kabadiwala"] {
+  --theme-primary: #3b82f6;
+  --theme-primary-hex: #3b82f6;
+}
+
+/* Collector role - Orange theme */
+[data-user-role="collector"] {
+  --theme-primary: #f97316;
+  --theme-primary-hex: #f97316;
 }
 
 @theme inline {

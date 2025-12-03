@@ -27,12 +27,14 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { t, language, setLanguage } = useLanguage();
   const { user, logout } = useAuth();
   const [openUserMenu, setOpenUserMenu] = useState(false);
+  const { themeColors } = useTheme();
   const isCollector = user?.user_type === "collector";
   const isAdmin = user?.user_type === "admin";
   const isKabadiwala = user?.user_type === "kabadiwala";
@@ -53,20 +55,20 @@ export default function Navbar() {
         return (
           <>
             <li>
-              <Link href="/user/ReportWaste" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trash2 className="w-4 h-4" />Report Waste</Link>
+              <Link href="/user/ReportWaste" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Trash2 className="w-4 h-4" />Report Waste</Link>
             </li>
             <li>
-              <Link href="/user/listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />Listings</Link>
+              <Link href="/user/listings" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Eye className="w-4 h-4" />Listings</Link>
             </li>
             <li>
-              <Link href="/user/my-listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Recycle className="w-4 h-4" />My Listings</Link>
+              <Link href="/user/my-listings" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Recycle className="w-4 h-4" />My Listings</Link>
             </li>
             {/* Rewards page does not exist */}
             <li>
-              <Link href="/user/leaderboard" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trophy className="w-4 h-4" />Leaderboard</Link>
+              <Link href="/user/leaderboard" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Trophy className="w-4 h-4" />Leaderboard</Link>
             </li>
             <li>
-              <Link href="/user/complain" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><MessageSquareWarning className="w-4 h-4" />Complain</Link>
+              <Link href="/user/complain" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><MessageSquareWarning className="w-4 h-4" />Complain</Link>
             </li>
           </>
         );
@@ -74,10 +76,10 @@ export default function Navbar() {
         return (
           <>
             <li>
-              <Link href="/kabadiwala/my-bids" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />My Bids</Link>
+              <Link href="/kabadiwala/my-bids" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Eye className="w-4 h-4" />My Bids</Link>
             </li>
             <li>
-              <Link href="/kabadiwala/listings" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Recycle className="w-4 h-4" />Available Pickups</Link>
+              <Link href="/kabadiwala/listings" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Recycle className="w-4 h-4" />Available Pickups</Link>
             </li>
             {/* Bidding History page does not exist */}
           </>
@@ -86,7 +88,7 @@ export default function Navbar() {
         return (
           <>
             <li>
-              <Link href="/admin" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Eye className="w-4 h-4" />Admin Panel</Link>
+              <Link href="/admin" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Eye className="w-4 h-4" />Admin Panel</Link>
             </li>
             {/* Dashboard, Reviews, Heatmap pages do not exist */}
           </>
@@ -95,13 +97,13 @@ export default function Navbar() {
         return (
           <>
             <li>
-              <Link href="/collector/my-quests" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trash2 className="w-4 h-4" />My Quests</Link>
+              <Link href="/collector/my-quests" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Trash2 className="w-4 h-4" />My Quests</Link>
             </li>
             <li>
-              <Link href="/collector/workload" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Zap className="w-4 h-4" />Workload</Link>
+              <Link href="/collector/workload" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Zap className="w-4 h-4" />Workload</Link>
             </li>
             <li>
-              <Link href="/user/leaderboard" className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"><Trophy className="w-4 h-4" />Leaderboard</Link>
+              <Link href="/user/leaderboard" className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}><Trophy className="w-4 h-4" />Leaderboard</Link>
             </li>
           </>
         )
@@ -136,7 +138,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/admin"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Zap className="w-4 h-4" />
                   Dashboard
@@ -145,7 +147,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/admin/informatics"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <BarChart3 className="w-4 h-4" />
                   Informatics
@@ -154,7 +156,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/admin/reports"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <FileText className="w-4 h-4" />
                   Reports
@@ -163,7 +165,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/admin/flag"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Flag className="w-4 h-4" />
                   Flags
@@ -172,7 +174,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/admin/binlevel"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Trash2 className="w-4 h-4" />
                   Bin Level
@@ -185,7 +187,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/collector/dashboard"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Eye className="w-4 h-4" />
                   Dashboard
@@ -194,7 +196,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/collector/notifications"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Bell className="w-4 h-4" />
                   Notifications
@@ -203,7 +205,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/collector/reports"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Trash2 className="w-4 h-4" />
                   Reports
@@ -215,7 +217,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/kabadiwala/listings"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Package className="w-4 h-4" />
                   Available Listings
@@ -224,7 +226,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/kabadiwala/my-bids"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <ShoppingBag className="w-4 h-4" />
                   My Bids
@@ -236,7 +238,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/ReportWaste"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Trash2 className="w-4 h-4" />
                   Report Waste
@@ -245,7 +247,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/showreports"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <FileText className="w-4 h-4" />
                   All Reports
@@ -254,7 +256,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/listings"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Eye className="w-4 h-4" />
                   Listings
@@ -263,7 +265,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/my-listings"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Package className="w-4 h-4" />
                   My Listings
@@ -272,7 +274,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/pickup"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <ShoppingBag className="w-4 h-4" />
                   View Bids
@@ -281,7 +283,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/badges/my-badges"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <Award className="w-4 h-4" />
                   Badges
@@ -290,7 +292,7 @@ export default function Navbar() {
               <li>
                 <Link
                   href="/user/complain"
-                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                  className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-2`}
                 >
                   <HelpCircle className="w-4 h-4" />
                   Complain
@@ -305,8 +307,8 @@ export default function Navbar() {
           <div className="hidden sm:flex items-center space-x-3 text-sm font-medium border-r border-slate-200 pr-4">
             <button
               onClick={() => setLanguage("en")}
-              className={`hover:text-green-600 transition-colors duration-200 flex items-center gap-1 ${language === "en"
-                  ? "text-green-600 font-semibold"
+              className={`hover:${themeColors.text} transition-colors duration-200 flex items-center gap-1 ${language === "en"
+                  ? `${themeColors.text} font-semibold`
                   : "text-slate-600"
                 }`}
             >
@@ -316,8 +318,8 @@ export default function Navbar() {
             <span className="text-slate-300">|</span>
             <button
               onClick={() => setLanguage("bn")}
-              className={`hover:text-green-600 transition-colors duration-200 ${language === "bn"
-                  ? "text-green-600 font-semibold"
+              className={`hover:${themeColors.text} transition-colors duration-200 ${language === "bn"
+                  ? `${themeColors.text} font-semibold`
                   : "text-slate-600"
                 }`}
             >
@@ -352,7 +354,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold bg-linear-to-r ${themeColors.gradient} text-white hover:${themeColors.gradientHover} transition-all duration-200 shadow-lg hover:shadow-xl`}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -379,7 +381,7 @@ export default function Navbar() {
             <div className="relative">
               <button
                 onClick={() => setOpenUserMenu((v) => !v)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-linear-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold bg-linear-to-r ${themeColors.gradient} text-white hover:${themeColors.gradientHover} transition-all duration-200 shadow-lg`}
               >
                 <User className="w-4 h-4" />
                 {user.full_name}
@@ -441,37 +443,37 @@ export default function Navbar() {
           <>
             <Link
               href="/admin"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Zap className="w-4 h-4" />
+              <Zap className={`w-4 h-4 ${themeColors.text}`} />
               Dashboard
             </Link>
             <Link
               href="/admin/informatics"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <BarChart3 className="w-4 h-4" />
+              <BarChart3 className={`w-4 h-4 ${themeColors.text}`} />
               Informatics
             </Link>
             <Link
               href="/admin/reports"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className={`w-4 h-4 ${themeColors.text}`} />
               Reports
             </Link>
             <Link
               href="/admin/flags"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Flag className="w-4 h-4" />
+              <Flag className={`w-4 h-4 ${themeColors.text}`} />
               Flags
             </Link>
             <Link
               href="/admin/binlevel"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className={`w-4 h-4 ${themeColors.text}`} />
               Bin Level
             </Link>
           </>
@@ -479,23 +481,23 @@ export default function Navbar() {
           <>
             <Link
               href="/collector/dashboard"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Eye className="w-4 h-4" />
+              <Eye className={`w-4 h-4 ${themeColors.text}`} />
               Dashboard
             </Link>
             <Link
               href="/collector/notifications"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Bell className="w-4 h-4" />
+              <Bell className={`w-4 h-4 ${themeColors.text}`} />
               Notifications
             </Link>
             <Link
               href="/collector/reports"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className={`w-4 h-4 ${themeColors.text}`} />
               Reports
             </Link>
           </>
@@ -503,16 +505,16 @@ export default function Navbar() {
           <>
             <Link
               href="/kabadiwala/listings"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Package className="w-4 h-4" />
+              <Package className={`w-4 h-4 ${themeColors.text}`} />
               Available Listings
             </Link>
             <Link
               href="/kabadiwala/my-bids"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className={`w-4 h-4 ${themeColors.text}`} />
               My Bids
             </Link>
           </>
@@ -520,78 +522,78 @@ export default function Navbar() {
           <>
             <Link
               href="/user/ReportWaste"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className={`w-4 h-4 ${themeColors.text}`} />
               Report Waste
             </Link>
             <Link
               href="/user/listings"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Eye className="w-4 h-4" />
+              <Eye className={`w-4 h-4 ${themeColors.text}`} />
               Listings
             </Link>
             <Link
               href="/user/my-listings"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Package className="w-4 h-4" />
+              <Package className={`w-4 h-4 ${themeColors.text}`} />
               My Listings
             </Link>
             <Link
               href="/user/pickup"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <ShoppingBag className="w-4 h-4" />
+              <ShoppingBag className={`w-4 h-4 ${themeColors.text}`} />
               View Bids
             </Link>
             <Link
               href="/user/showreports"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className={`w-4 h-4 ${themeColors.text}`} />
               All Reports
             </Link>
             <Link
               href="/user/leaderboard"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Trophy className="w-4 h-4" />
+              <Trophy className={`w-4 h-4 ${themeColors.text}`} />
               Leaderboard
             </Link>
             <Link
               href="/user/badges/my-badges"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <Award className="w-4 h-4" />
+              <Award className={`w-4 h-4 ${themeColors.text}`} />
               Badges
             </Link>
             <Link
               href="/user/complain"
-              className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"
+              className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}
             >
-              <MessageSquareWarning className="w-4 h-4" />
+              <MessageSquareWarning className={`w-4 h-4 ${themeColors.text}`} />
               Complain
             </Link>
           </>
         )}
         {user && user.user_type === "kabadiwala" && (
           <>
-            <Link href="/kabadiwala/my-bids" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />My Bids</Link>
-            <Link href="/kabadiwala/listings" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Recycle className="w-4 h-4" />Available Pickups</Link>
+            <Link href="/kabadiwala/my-bids" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Eye className={`w-4 h-4 ${themeColors.text}`} />My Bids</Link>
+            <Link href="/kabadiwala/listings" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Recycle className={`w-4 h-4 ${themeColors.text}`} />Available Pickups</Link>
           </>
         )}
         {user && user.user_type === "admin" && (
           <>
-            <Link href="/admin" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Eye className="w-4 h-4" />Admin Panel</Link>
+            <Link href="/admin" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Eye className={`w-4 h-4 ${themeColors.text}`} />Admin Panel</Link>
           </>
         )}
         {user && user.user_type === "collector" && (
           <>
-            <Link href="/collector/my-quests" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trash2 className="w-4 h-4" />My Quests</Link>
-            <Link href="/collector/workload" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Zap className="w-4 h-4" />Workload</Link>
-            <Link href="/user/leaderboard" className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 transition-colors duration-200 text-slate-900"><Trophy className="w-4 h-4" />Leaderboard</Link>
+            <Link href="/collector/my-quests" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Trash2 className={`w-4 h-4 ${themeColors.text}`} />My Quests</Link>
+            <Link href="/collector/workload" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Zap className={`w-4 h-4 ${themeColors.text}`} />Workload</Link>
+            <Link href="/user/leaderboard" className={`flex items-center gap-3 p-3 rounded-lg hover:${themeColors.bgLight} transition-colors duration-200 text-slate-900`}><Trophy className={`w-4 h-4 ${themeColors.text}`} />Leaderboard</Link>
           </>
         )}
       </div>

@@ -111,8 +111,28 @@ export default function ConfirmationPage() {
         throw new Error(errorData.detail || "Failed to update location");
       }
 
+      const data = await response.json();
       toast.success("Location updated successfully!");
-      
+
+      // Update the user in localStorage with the new location
+      if (user && token) {
+        const updatedUser = {
+          ...user,
+          location: {
+            type: "Point",
+            coordinates: [lng, lat]
+          }
+        };
+
+        try {
+          const authData = JSON.parse(localStorage.getItem("auth") || "{}");
+          authData.user = updatedUser;
+          localStorage.setItem("auth", JSON.stringify(authData));
+        } catch (e) {
+          console.error("Error updating localStorage:", e);
+        }
+      }
+
       // Redirect to home page (collector dashboard)
       setTimeout(() => {
         router.push("/");
