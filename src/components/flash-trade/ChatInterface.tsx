@@ -30,11 +30,11 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
     const fetchMessages = async () => {
         try {
             const [msgs, chat] = await Promise.all([
-                apiRequest(`/chats/${chatId}/messages`, { auth: true, token }),
-                apiRequest(`/chats/${chatId}`, { auth: true, token })
+                apiRequest<Message[]>(`/chats/${chatId}/messages`, { auth: true, token }),
+                apiRequest<{ status: string }>(`/chats/${chatId}`, { auth: true, token })
             ]);
-            setMessages(msgs);
-            setChatStatus(chat.status);
+            setMessages(Array.isArray(msgs) ? msgs : []);
+            setChatStatus(typeof chat?.status === "string" ? chat.status : "unlocked");
         } catch (e) {
             console.error("Failed to fetch messages", e);
         } finally {
@@ -61,7 +61,7 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
         if (!newMessage.trim()) return;
 
         try {
-            const msg = await apiRequest(`/chats/${chatId}/messages`, {
+            const msg = await apiRequest<Message>(`/chats/${chatId}/messages`, {
                 method: "POST",
                 body: JSON.stringify({ content: newMessage }),
                 auth: true,
@@ -70,7 +70,7 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
                     'Content-Type': 'application/json'
                 }
             });
-            setMessages([...messages, msg]);
+            setMessages((prev) => [...prev, msg]);
             setNewMessage("");
         } catch (e) {
             console.error("Failed to send message", e);
@@ -81,7 +81,7 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
     const handleUnlockChat = async () => {
         setUnlocking(true);
         try {
-            const updatedChat = await apiRequest(`/chats/${chatId}/confirm-deal`, {
+            const updatedChat = await apiRequest<{ status: string }>(`/chats/${chatId}/confirm-deal`, {
                 method: "POST",
                 body: JSON.stringify({ confirm: true }),
                 auth: true,
@@ -90,7 +90,7 @@ export default function ChatInterface({ chatId, currentUser }: ChatInterfaceProp
                     'Content-Type': 'application/json'
                 }
             });
-            setChatStatus(updatedChat.status);
+            setChatStatus(typeof updatedChat?.status === "string" ? updatedChat.status : chatStatus);
         } catch (e) {
             console.error("Failed to unlock chat", e);
             alert("Failed to unlock chat. Please try again.");

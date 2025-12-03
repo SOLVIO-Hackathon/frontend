@@ -22,16 +22,16 @@ export default function ChatPage() {
             try {
                 // Try to get existing chat by listing ID
                 try {
-                    const chat = await apiRequest(`/chats/listing/${id}`, {
+                    const chat = await apiRequest<{ id: string | number }>(`/chats/listing/${id}`, {
                         auth: true,
                         token,
                     });
-                    setChatId(chat.id);
+                    setChatId(String(chat.id));
                 } catch (fetchError: any) {
                     // If chat doesn't exist (404), create a new one
                     if (fetchError?.status === 404) {
                         console.log("Chat not found, creating new chat...");
-                        const newChat = await apiRequest(`/chats`, {
+                        const newChat = await apiRequest<{ id: string | number }>(`/chats`, {
                             method: 'POST',
                             auth: true,
                             token,
@@ -42,7 +42,7 @@ export default function ChatPage() {
                                 'Content-Type': 'application/json'
                             }
                         });
-                        setChatId(newChat.id);
+                        setChatId(String(newChat.id));
                     } else {
                         // If it's a different error, throw it
                         throw fetchError;

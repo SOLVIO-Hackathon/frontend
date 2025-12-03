@@ -22,7 +22,8 @@ import {
   BarChart3,
   Award,
   FileText,
-  Flag
+  Flag,
+  HelpCircle
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -177,6 +178,7 @@ export default function Navbar() {
                   Bin Level
                 </Link>
               </li>
+              
             </>
           ) : isCollector ? (
             <>
@@ -283,6 +285,15 @@ export default function Navbar() {
                 >
                   <Award className="w-4 h-4" />
                   Badges
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/user/complain"
+                  className="hover:text-green-600 transition-colors duration-200 flex items-center gap-2"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  Complain
                 </Link>
               </li>
               
