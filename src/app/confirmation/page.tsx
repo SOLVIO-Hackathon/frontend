@@ -113,25 +113,13 @@ export default function ConfirmationPage() {
 
       const data = await response.json();
       toast.success("Location updated successfully!");
-
-      // Update the user in localStorage with the new location
-      if (user && token) {
-        const updatedUser = {
-          ...user,
-          location: {
-            type: "Point",
-            coordinates: [lng, lat]
-          }
-        };
-
-        try {
-          const authData = JSON.parse(localStorage.getItem("auth") || "{}");
-          authData.user = updatedUser;
-          localStorage.setItem("auth", JSON.stringify(authData));
-        } catch (e) {
-          console.error("Error updating localStorage:", e);
+      
+      // Mark one-time setup complete for this collector
+      try {
+        if (user?.id) {
+          localStorage.setItem(`collectorSetup:${user.id}`, "true");
         }
-      }
+      } catch {}
 
       // Redirect to home page (collector dashboard)
       setTimeout(() => {
